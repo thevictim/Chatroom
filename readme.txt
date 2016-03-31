@@ -1,5 +1,12 @@
 Module 6
 
+lol I'm gonna conclude that what Adam said about only having one file is kinda lame,
+you at least need separate css files for bootstrap >.>
+Guess he meant one node file. The one node file that serves the html file that can draw from anywhere
+
+While we're just making the bootstrap/jQuery/DOM stuff, I'm testing these files out by
+uploading them in public_html.
+
 Chatroom
 
 HTML-wise
@@ -41,8 +48,17 @@ Steps:
 1. write some room objects in out js file, figure out display things (bootstrap, jquery)
 2. then add socket.io stuff
 
+Creative:
+Save settings/chats in MongoDB
+If we don't want to do MongoDB, one thing we could do is to display message timestamps,
+or allow private rooms to ban words/make one word change to another (eg every time I type "hello", it displays as "you dickhead")
+3pts Bootstrap
+We could also allows users to toggle/cycle between tabs by pressing crtl+tab and crtl+shift+tab
 
 
 socket.on('disconnect', function(){
     socket.broadcast.to(roomName).emit('user_leave', {user_name: "johnjoe123"});
 });
+
+Useful links:
+Object-oriented programming in Javascript: http://javascriptissexy.com/oop-in-javascript-what-you-need-to-know/
