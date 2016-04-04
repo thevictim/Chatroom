@@ -127,21 +127,22 @@ function addButtonTabListeners(){
 		$('ul.nav-tabs li.active').removeClass('active');
 		$('#tab_'+id).addClass('active');
 		$(this).tab('show');
+		$('.current_users').empty();
 	});
 
-	$(".closeTab").on("click", "button", function(event){
-		alert("shit");
+	$(".nav-tabs").on("click", "button", function(event){
         var tabContentId = $(this).parent().attr("href");
         $(this).parent().parent().remove(); //remove li of tab
         $('.nav-tabs a:last').tab('show'); // Select first tab
         $(tabContentId).remove(); //remove respective tab content
     });
 
-	// $(".nav-tabs").on("click", "a", function(event){
-	// 		alert("shit 2");
-	// 	event.preventDefault();
-	// 	$(this).tab('show');
-	// })
+	$(".nav-tabs").on("click", "a", function(event){
+		event.preventDefault();
+		var id = $(this).attr("id");
+
+		$(this).tab('show');
+	})
 
 
 
