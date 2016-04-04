@@ -31,8 +31,7 @@ function Room(name, creator) { // base room constructor
 	'data-toggle' : "tab"
 }).text(this.name)); 
 
-	var chat_space = document.createElement("div"); // whenever a room is created, add a button for it
-	
+	var chat_space = document.createElement("div"); 
 	$('.tab-content').append($(chat_space).attr({
 	class : "tab-pane",
 	id :"room_"+this.id,
@@ -50,7 +49,7 @@ function displayUsers(current_room){
 			class : "list-group-item",
 			value : users[i],
 			id : users[i],  // id of the room, used to identify tab and tab content
-			href :"#user_"+users[i],
+			href :"#room_"+this.id,
 			'data-toggle' : "tab"
 		}).text(users[i]));
 	};
@@ -118,14 +117,22 @@ function addButtonTabListeners(){
 		if ($('#tab_'+id).length == 0){ // if tab doesn't already exist
 			var userTab = $("<li>").attr('id','tab_'+id).append(// make and display new tab
 				$("<a>").attr({
-					href :"#user_"+id,
+					href :"#room_"+id,
 					'data-toggle' : "tab"
-				}).text($(this).attr("value"))
+				}).text($(this).attr("value")).append("<button class='close closeTab' type='button' >×</button>")
 			);
 			$('.nav-tabs').append(userTab);
 		}
 		$('ul.nav-tabs li.active').removeClass('active');
 		$('#tab_'+id).addClass('active');
+
+		if ($('#room_'+id).length == 0){
+		var chat_space = document.createElement("div"); 
+			$('.tab-content').append($(chat_space).attr({
+			class : "tab-pane",
+			id :"room_"+this.id,
+		})); 
+		}
 		$(this).tab('show');
 		$('.current_users').empty();
 	});
@@ -139,9 +146,14 @@ function addButtonTabListeners(){
 
 	$(".nav-tabs").on("click", "a", function(event){
 		event.preventDefault();
-		var id = $(this).attr("id");
-
+		var id = $(this).attr("href").slice(6);
 		$(this).tab('show');
+		if (!isNaN(id)) {		
+			displayUsers(rooms[id]);
+		}
+		else{
+		$('.current_users').empty();
+		}
 	})
 
 
