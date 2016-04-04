@@ -22,13 +22,38 @@ function Room(name, creator) { // base room constructor
 	this.id = max_room_id;
 	max_room_id++; // auto increment the id
 	var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
-			$('.chatrooms').append($(roomButton).attr({
+
+	$('.chatrooms').append($(roomButton).attr({
+	class : "list-group-item",
+	value : this.name,
+	id : this.id,  // id of the room, used to identify tab and tab content
+	href :"#room_"+this.id,
+	'data-toggle' : "tab"
+}).text(this.name)); 
+
+	var chat_space = document.createElement("div"); // whenever a room is created, add a button for it
+	
+	$('.tab-content').append($(chat_space).attr({
+	class : "tab-pane",
+	id :"room_"+this.id,
+})); 
+
+}
+
+function displayUsers(current_room){
+	$('.current_users').empty();
+	// need to remove the current user first; then add 
+	users = current_room.users;
+	for (var i = users.length - 1; i >= 0; i--) {	
+		var userButton = document.createElement("button"); // whenever a room is created, add a button for it
+			$('.current_users').append($(userButton).attr({
 			class : "list-group-item",
-			value : this.name,
-			id : this.id,  // id of the room, used to identify tab and tab content
-			href :"#room_"+this.id,
+			value : users[i],
+			id : users[i],  // id of the room, used to identify tab and tab content
+			href :"#user_"+users[i],
 			'data-toggle' : "tab"
-		}).text(this.name)); 
+		}).text(users[i]));
+	};
 }
 
 Room.prototype = {
@@ -62,7 +87,7 @@ var tmp = function(){}; // so that it doesn't copy the Room constructor. Refer t
 tmp.prototype = Room.prototype;
 PrivateRoom.prototype = new tmp(); // inherit the prototypes and a blank constructor.
 PrivateRoom.prototype.constructor = PrivateRoom; //override constructor
-PrivateRoom.prototype.banUser = function (user_to_ban)  { // add user to blacklist of a room
+PrivateRoom.prototype.banUser = function (user_to_ban){ // add user to blacklist of a room
 	this.blacklist.push(user_to_ban);
 	console.log(user_to_ban+" banned");
 }	
@@ -77,26 +102,62 @@ function addButtonTabListeners(){
 				$("<a>").attr({
 					href :"#room_"+id,
 					'data-toggle' : "tab"
-				}).text($(this).attr("value"))
+				}).text($(this).attr("value")).append("<button class='close closeTab' type='button' >×</button>")
 			);
 			$('.nav-tabs').append(roomTab);
 		}
 		$('ul.nav-tabs li.active').removeClass('active');
 		$('#tab_'+id).addClass('active');
 		$(this).tab('show');
+		displayUsers(rooms[id]);
 	});
-	$(".nav-tabs").on("click", "a", function(event){
+
+	$(".current_users").on("click", "button", function(event){
 		event.preventDefault();
+		var id = $(this).attr("id");
+		if ($('#tab_'+id).length == 0){ // if tab doesn't already exist
+			var userTab = $("<li>").attr('id','tab_'+id).append(// make and display new tab
+				$("<a>").attr({
+					href :"#user_"+id,
+					'data-toggle' : "tab"
+				}).text($(this).attr("value"))
+			);
+			$('.nav-tabs').append(userTab);
+		}
+		$('ul.nav-tabs li.active').removeClass('active');
+		$('#tab_'+id).addClass('active');
 		$(this).tab('show');
-	})
+	});
+
+	$(".closeTab").on("click", "button", function(event){
+		alert("shit");
+        var tabContentId = $(this).parent().attr("href");
+        $(this).parent().parent().remove(); //remove li of tab
+        $('.nav-tabs a:last').tab('show'); // Select first tab
+        $(tabContentId).remove(); //remove respective tab content
+    });
+
+	// $(".nav-tabs").on("click", "a", function(event){
+	// 		alert("shit 2");
+	// 	event.preventDefault();
+	// 	$(this).tab('show');
+	// })
+
+
+
 }
 
 function doUponLoading(event){
 	addButtonTabListeners();
-	
 	// Where I test things out
 	rooms.push(new PrivateRoom("roomName", "theCreator", "abcd"));
 	rooms.push(new PrivateRoom("Sun", "Moon", "abcd"));
 	rooms.push(new PrivateRoom("hey", "hi", "abcd"));
+	// testp = new PrivateRoom("hey", "hi", "abcd")
+	testroom = new Room("TestRoom", "Dylan","asdd");
+	testroom.users.push('Joe');
+	testroom.users.push('sep');
+	testroom.users.push('ine');
+	rooms.push(testroom);
 	console.log(rooms);
 }
