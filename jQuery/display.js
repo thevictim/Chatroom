@@ -2,18 +2,10 @@ rooms = []; // make sure to push to this array whenever a room is made
 var max_room_id = 0; // increments every time a room is created
 
 // Hi Dylan!
-// Put all the files in a public_html directory, and point your browser to client.html. Let make the thing without socket.io first.
-//
-// Things I've done:
-// Created the prototypes (classes) for Room and PrivateRoom, and added some methods for them.
-// To create them refer to line 98
-// Made buttons for rooms
-// Made a tab appear/be selected + show content (hardcoded in client.html) if the button is clicked
-// Made a tab be selected and its content appear if it is clicked
-// Also added some ideas for the creative in the readme
-//
-// I ask Adam about the creative later. Take it away!
-
+// Things I've done, 04/04/16:
+// Moved creating a div for each room from the room constructor, to line ~104 when a room button is clicked
+// Consolidated things like activating a tab and displaying users into the showRoom function
+// Refactored the private convo things to make it more object-oriented, make it a room object, to make things more standardized
 
 function Room(name, creator) { // base room constructor
 	this.name = name
@@ -24,39 +16,12 @@ function Room(name, creator) { // base room constructor
 	var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
 
 	$('.chatrooms').append($(roomButton).attr({
-	class : "list-group-item",
-	value : this.name,
+		class : "list-group-item",
+		value : this.name,
 	id : this.id,  // id of the room, used to identify tab and tab content
 	href :"#room_"+this.id,
 	'data-toggle' : "tab"
 }).text(this.name)); 
-
-	var chat_space = document.createElement("div"); // whenever a room is created, add a button for it
-	var chat_list_group = document.createElement("ul")
-	$(chat_space).append($(chat_list_group).attr({
-		class : "list-group"
-	}));
-	$('.tab-content').append($(chat_space).attr({
-	class : "tab-pane pre-scrollable",
-	id :"room_"+this.id,
-})); 
-
-}
-
-function displayUsers(current_room){
-	$('.current_users').empty();
-	// need to remove the current user first; then add 
-	users = current_room.users;
-	for (var i = users.length - 1; i >= 0; i--) {	
-		var userButton = document.createElement("button"); // whenever a room is created, add a button for it
-			$('.current_users').append($(userButton).attr({
-			class : "list-group-item",
-			value : users[i],
-			id : users[i],  // id of the room, used to identify tab and tab content
-			href :"#room_"+this.id,
-			'data-toggle' : "tab"
-		}).text(users[i]));
-	};
 }
 
 Room.prototype = {
@@ -95,54 +60,95 @@ PrivateRoom.prototype.banUser = function (user_to_ban){ // add user to blacklist
 	console.log(user_to_ban+" banned");
 }	
 
+function twoPersonRoom(creator, friend) { // base room constructor
+	for (var i = 0; i < rooms.length; i++){
+		if ((rooms[i].name == creator && rooms[i].creator == friend) || (rooms[i].name == friend && rooms[i].creator == creator)){
+			return rooms[i];
+		}
+	}
+	this.name = friend;
+	this.creator = creator;
+	this.users = [];
+	this.id = max_room_id;
+	max_room_id++; // auto increment the id
+	var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
+
+// 	$('.chatrooms').append($(roomButton).attr({
+// 		class : "list-group-item",
+// 		value : this.name,
+// 	id : this.id,  // id of the room, used to identify tab and tab content
+// 	href :"#room_"+this.id,
+// 	'data-toggle' : "tab"
+// }).text(this.name)); 
+}
+
+function displayUsers(current_room){
+	$('.current_users').empty();
+	// need to remove the current user first; then add 
+	users = current_room.users;
+	for (var i = users.length - 1; i >= 0; i--) {	
+		var userButton = document.createElement("button"); // whenever a room is created, add a button for it
+		$('.current_users').append($(userButton).attr({
+			class : "list-group-item",
+			value : users[i],
+			// id : users[i],  // id of the room, used to identify tab and tab content
+			// href :"#room_"+this.id,
+			'data-toggle' : "tab"
+		}).text(users[i]));
+	};
+}
+
+function showRoom(room_id){
+	$('ul.nav-tabs li.active').removeClass('active');
+	$('#tab_'+room_id).addClass('active'); // Why is this not working???
+	$('#tab_'+room_id).tab('show');
+	displayUsers(rooms[room_id]);
+}
+
+function createRoomAndTab(id, name){
+	if ($('#tab_'+id).length == 0){ // if tab doesn't already exist
+		var roomTab = $("<li>").attr('id','tab_'+id).append(// make and display new tab
+			$("<a>").attr({
+				href :"#room_"+id,
+				'data-toggle' : "tab"
+			}).text(name).append("<button class='close closeTab' type='button' >×</button>")
+			);
+		// moved this from the room constructor to here
+		$('.nav-tabs').append(roomTab);
+		var chat_space = document.createElement("div");
+		var chat_list_group = document.createElement("ul")
+		$(chat_space).append($(chat_list_group).attr({
+			class : "list-group"
+		}));
+		$('.tab-content').append($(chat_space).attr({
+			class : "tab-pane pre-scrollable",
+			id :"room_"+id,
+		})); 
+		if (id == 1){
+			addMessage(1, "test user", "test message");
+		}
+	}
+	showRoom(id);
+}
+
 // Detect if tabs or buttons are clicked, if so show their content
 function addButtonTabListeners(){
 	$(".chatrooms").on("click", "button", function(event){
 		event.preventDefault();
 		var id = $(this).attr("id");
-		if ($('#tab_'+id).length == 0){ // if tab doesn't already exist
-			var roomTab = $("<li>").attr('id','tab_'+id).append(// make and display new tab
-				$("<a>").attr({
-					href :"#room_"+id,
-					'data-toggle' : "tab"
-				}).text($(this).attr("value")).append("<button class='close closeTab' type='button' >×</button>")
-			);
-			$('.nav-tabs').append(roomTab);
-		}
-		$('ul.nav-tabs li.active').removeClass('active');
-		$('#tab_'+id).addClass('active');
-		$(this).tab('show');
-		displayUsers(rooms[id]);
+		createRoomAndTab(id, $(this).attr("value"));
 	});
 
 	$(".current_users").on("click", "button", function(event){
 		event.preventDefault();
-		var id = $(this).attr("id");
-		if ($('#tab_'+id).length == 0){ // if tab doesn't already exist
-			var userTab = $("<li>").attr('id','tab_'+id).append(// make and display new tab
-				$("<a>").attr({
-					href :"#room_"+id,
-					'data-toggle' : "tab"
-				}).text($(this).attr("value")).append("<button class='close closeTab' type='button' >×</button>")
-			);
-			$('.nav-tabs').append(userTab);
-		}
-		$('ul.nav-tabs li.active').removeClass('active');
-		$('#tab_'+id).addClass('active');
-
-		if ($('#room_'+id).length == 0){
-		var chat_space = document.createElement("div"); 
-			$('.tab-content').append($(chat_space).attr({
-			class : "tab-pane",
-			id :"room_"+this.id,
-		})); 
-		}
-		$(this).tab('show');
-		$('.current_users').empty();
+		var convoRoom = new twoPersonRoom("person1", $(this).attr("value"));
+		var id = convoRoom.id;
+		rooms.push(convoRoom);
+		createRoomAndTab(id, $(this).attr("value"));
 	});
 
 	$(".nav-tabs").on("click", "button", function(event){
-        var tabContentId = $(this).parent().attr("href");
+		var tabContentId = $(this).parent().attr("href");
         $(this).parent().parent().remove(); //remove li of tab
         $('.nav-tabs a:last').tab('show'); // Select first tab
         $(tabContentId).remove(); //remove respective tab content
@@ -151,17 +157,19 @@ function addButtonTabListeners(){
 	$(".nav-tabs").on("click", "a", function(event){
 		event.preventDefault();
 		var id = $(this).attr("href").slice(6);
-		$(this).tab('show');
-		if (!isNaN(id)) {		
-			displayUsers(rooms[id]);
-		}
-		else{
-		$('.current_users').empty();
-		}
-	})
+		// $(this).tab('show');
+		displayUsers(rooms[id]);
+	});
+}
 
-
-
+function addMessage(room_id, user, message){
+	// call this in the socket.io stuff
+	$('#room_'+room_id+' .list-group').append(
+		$("<li>").attr('class', 'list-group-item').append(
+			$("<span>").attr('class', 'message').text(message),
+			$("<br>"),
+			$("<small>").attr('class', "text-muted").text(user)
+		));
 }
 
 function doUponLoading(event){
