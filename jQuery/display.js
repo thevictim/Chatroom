@@ -31,9 +31,13 @@ function Room(name, creator) { // base room constructor
 	'data-toggle' : "tab"
 }).text(this.name)); 
 
-	var chat_space = document.createElement("div"); 
+	var chat_space = document.createElement("div"); // whenever a room is created, add a button for it
+	var chat_list_group = document.createElement("ul")
+	$(chat_space).append($(chat_list_group).attr({
+		class : "list-group"
+	}));
 	$('.tab-content').append($(chat_space).attr({
-	class : "tab-pane",
+	class : "tab-pane pre-scrollable",
 	id :"room_"+this.id,
 })); 
 
