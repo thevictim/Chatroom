@@ -1,0 +1,307 @@
+<!--Hi Dylan!
+	I renamed this to group-client.html so that it doesn't accidentally override our individual portion stuff.
+	All the display.js stuff and other functions go in a javascript section at the bottom
+	The socket.io stuff goes in a separate javascript section below it, just for clarity
+	Put the two files in your node folder, then run "node group-chat-server.js"
+	You dont need to start/stop the server when you make changes to group-client.html
+	You need to restart the server if you change group-chat-server.js
+
+	Things I've done, 04/04/16:
+	Moved creating a div for each room from the room constructor, to line ~104 when a room button is clicked
+	Consolidated things like activating a tab and displaying users into the showRoom function
+	Refactored the private convo things to make it more object-oriented, make it a room object, to make things more standardized
+	Refactored the code to use the createRoomAndTab, to keep things more standardized
+	Banged my head against the wall but cant seem to fix the bug you mentioned
+	Made a addMessage function that the socket.io stuff can call
+	Migrated everything into this file so that node can serve just one file
+	Modified the wiki chat code to work on ours! Atm you can chat in the "sun" room
+	Added a nickname!
+	Identify active room and post message to that room
+	Broadcast if a user joins a room (buggy)
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	<title>Chatroom</title>
+	<!-- css -->
+	<link href='https://fonts.googleapis.com/css?family=Raleway:500' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<link href="css/chat-style.css" rel="stylesheet">
+	<style type="text/css">
+		body {
+			padding: 10px 15px;
+			text-align: center;
+		}
+	</style>
+	<!-- bootstrap javascript -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> <!-- must be included before bootstrap.min.js -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+	<script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+	<div class="row " >
+		<h3 class="text-center" >Chat room website! </h3>
+		<br /><br />
+		<div class="col-md-2">
+			<div class="panel panel-primary">
+				<div class="panel-heading">
+					Current users
+				</div>
+				<ul class="list-group current_users">
+					<li class="list-group-item">
+						<h5>Josephine Lee  </h5>
+					</li>
+					<li class="list-group-item">				
+						<h5>Dylan Chen </h5>
+					</li>
+					<li class="list-group-item">
+						<h5>Random Shit </h5>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-md-8">
+			<ul class="nav nav-tabs"></ul>
+			<div class="tab-content">				
+			</div>
+			<div class="panel-footer">
+				<div class="input-group">
+					<input type="text" class="form-control" id = "message_value" placeholder="Enter Message" />
+					<span class="input-group-btn">
+						<button class="btn btn-info" id = "send" type="button">SEND</button>
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-2 ">
+			<div class="panel panel-primary">
+				<div class="panel-heading">
+					Available Rooms
+				</div>
+				<ul class="list-group chatrooms" >
+				</ul>
+			</div>
+		</div>
+	</div>
+	<!-- <script type="text/javascript" src="jQuery/display.js"></script> -->
+	<script type="text/javascript">
+		var socketio = io.connect();
+		// SCRIPT FOR FUNCTIONS
+		// globals
+		rooms = []; // make sure to push to this array whenever a room is made
+		var max_room_id = 0; // increments every time a room is created
+		var nickname;
+
+		function Room(name, creator) { // base room constructor
+			this.name = name
+			this.creator = creator;
+			this.users = [creator];
+			this.id = max_room_id;
+			max_room_id++; // auto increment the id
+			var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
+
+			$('.chatrooms').append($(roomButton).attr({
+				class : "list-group-item",
+				value : this.name,
+			id : this.id,  // id of the room, used to identify tab and tab content
+			href :"#room_"+this.id,
+			'data-toggle' : "tab"
+		}).text(this.name)); 
+		}
+
+		Room.prototype = {
+			constructor: Room, // assign/(override?) constructor
+			addUser:function (user_to_add)  { // methods. Add user to the users array in a room
+				this.users.push(user_to_add);
+				console.log(user_to_add+" added");
+			},
+			removeUser:function (user_to_remove)  { // Remove user from the users array in a room
+				var index = users.indexOf(user_to_remove); 
+				if (index > -1) {
+					users.splice(index, 1);
+					console.log(user_to_remove+" removed");
+					if (users.length == 0){
+						console.log("no more users in room");
+					}
+				}
+			}
+		}
+
+		function PrivateRoom (name, creator, password, blacklist) {
+			Room.call(this, name, creator); // use the code from function Room
+			this.password = password; // also set a password
+			if (typeof blacklist === 'undefined'){ // initialize empty blacklist if not specified
+				this.blacklist = [];
+			}else{
+				this.blacklist = blacklist; // else initialize blacklist
+			}	
+		}
+		var tmp = function(){}; // so that it doesn't copy the Room constructor. Refer to the second-best answer here: http://stackoverflow.com/questions/4152931/javascript-inheritance-call-super-constructor-or-use-prototype-chain
+		tmp.prototype = Room.prototype;
+		PrivateRoom.prototype = new tmp(); // inherit the prototypes and a blank constructor.
+		PrivateRoom.prototype.constructor = PrivateRoom; //override constructor
+		PrivateRoom.prototype.banUser = function (user_to_ban){ // add user to blacklist of a room
+			this.blacklist.push(user_to_ban);
+			console.log(user_to_ban+" banned");
+		}	
+
+		function twoPersonRoom(creator, friend) { // base room constructor
+			for (var i = 0; i < rooms.length; i++){
+				if ((rooms[i].name == creator && rooms[i].creator == friend) || (rooms[i].name == friend && rooms[i].creator == creator)){
+					return rooms[i];
+				}
+			}
+			this.name = friend;
+			this.creator = creator;
+			this.users = [];
+			this.id = max_room_id;
+			max_room_id++; // auto increment the id
+			var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
+		}
+
+		function displayUsers(current_room){
+			$('.current_users').empty();
+			// need to remove the current user first; then add 
+			users = current_room.users;
+			for (var i = users.length - 1; i >= 0; i--) {	
+				var userButton = document.createElement("button"); // whenever a room is created, add a button for it
+				$('.current_users').append($(userButton).attr({
+					class : "list-group-item",
+					value : users[i],
+					// id : users[i],  // id of the room, used to identify tab and tab content
+					// href :"#room_"+this.id,
+					'data-toggle' : "tab"
+				}).text(users[i]));
+			};
+		}
+
+		function showRoom(room_id){
+			$('ul.nav-tabs li.active').removeClass('active');
+			$('#tab_'+room_id).addClass('active'); // Why is this not working???
+			$('#tab_'+room_id).tab('show');
+			displayUsers(rooms[room_id]);
+		}
+
+		function createRoomAndTab(id, name){
+			if ($('#tab_'+id).length == 0){ // if tab doesn't already exist
+				var roomTab = $("<li>").attr('id','tab_'+id).append(// make and display new tab
+					$("<a>").attr({
+						href :"#room_"+id,
+						'data-toggle' : "tab"
+					}).text(name).append("<button class='close closeTab' type='button' >×</button>")
+					);
+				// moved this from the room constructor to here
+				$('.nav-tabs').append(roomTab);
+				var chat_space = document.createElement("div");
+				var chat_list_group = document.createElement("ul")
+				$(chat_space).append($(chat_list_group).attr({
+					class : "list-group"
+				}));
+				$('.tab-content').append($(chat_space).attr({
+					class : "tab-pane pre-scrollable",
+					id :"room_"+id,
+				})); 
+				rooms[id].addUser(nickname);				
+				socketio.emit("user_joined_room_to_server", {
+					user:nickname,
+					room:id
+				});
+			}
+			showRoom(id);
+		}
+
+		// Detect if tabs or buttons are clicked, if so show their content
+		function addButtonTabListeners(){
+			$(".chatrooms").on("click", "button", function(event){
+				event.preventDefault();
+				var id = $(this).attr("id");
+				createRoomAndTab(id, $(this).attr("value"));
+			});
+
+			$(".current_users").on("click", "button", function(event){
+				event.preventDefault();
+				var convoRoom = new twoPersonRoom("person1", $(this).attr("value"));
+				var id = convoRoom.id;
+				rooms.push(convoRoom);
+				createRoomAndTab(id, $(this).attr("value"));
+			});
+
+			$(".nav-tabs").on("click", "button", function(event){
+				var tabContentId = $(this).parent().attr("href");
+		        $(this).parent().parent().remove(); //remove li of tab
+		        $('.nav-tabs a:last').tab('show'); // Select first tab
+		        $(tabContentId).remove(); //remove respective tab content
+		    });
+
+			$(".nav-tabs").on("click", "a", function(event){
+				event.preventDefault();
+				var id = $(this).attr("href").slice(6);
+				// $(this).tab('show');
+				displayUsers(rooms[id]);
+			});
+			
+			$("#send").on("click", function(event){
+				var msg = $("#message_value").val();
+				var room_id = $('ul.nav-tabs li.active a').attr("href").slice(6);
+				socketio.emit("message_to_server", {
+					message:msg,
+					sender:nickname,
+					room:room_id
+				});
+			});
+		}
+
+		function addMessage(room_id, user, message){
+			// call this in the socket.io stuff
+			$('#room_'+room_id+' .list-group').append(
+				$("<li>").attr('class', 'list-group-item').append(
+					$("<span>").attr('class', 'message').text(message),
+					$("<br>"),
+					$("<small>").attr('class', "text-muted").text(user)
+					));
+		}
+		
+		function askForUsername(){
+			nickname = prompt("Pick a nickname");
+		}
+
+		function allTheSocketListerners(){
+			socketio.on("message_to_client",function(data) {
+				console.log("2"+data['sender']);				
+			         addMessage(data['room'], data['sender'], data['message']);
+			         // Hardcoded room at the moment. Would 
+			});
+			socketio.on("user_joined_room_to_client",function(data) {
+				console.log("2"+data['room']);
+			         rooms[data["room"]].addUser(data['user']);
+			});
+			
+		}
+
+		function doUponLoading(event){
+			addButtonTabListeners();
+			allTheSocketListerners()
+			askForUsername();
+			// To test things out
+			rooms.push(new PrivateRoom("roomName", "theCreator", "abcd"));
+			rooms.push(new PrivateRoom("Sun", "Moon", "abcd"));
+			rooms.push(new PrivateRoom("hey", "hi", "abcd"));
+			testroom = new Room("TestRoom", "Dylan","asdd");
+			testroom.users.push('Joe');
+			testroom.users.push('sep');
+			testroom.users.push('ine');
+			rooms.push(testroom);
+			console.log(rooms);
+		}
+
+		// things to do last. In our javascript includes, write all the functions. Execute code here.
+		document.addEventListener("DOMContentLoaded", doUponLoading, false);
+		 </script>
+</body>
+</html>
