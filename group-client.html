@@ -184,7 +184,9 @@
 		function showRoom(room_id){
 			$('ul.nav-tabs li.active').removeClass('active');
 			$('#tab_'+room_id).addClass('active'); // Why is this not working???
-			$('#tab_'+room_id).tab('show');
+			// $('#tab_'+room_id).tab('show');
+			$('.tab-content .tab-pane.active').removeClass('active');
+			$('#room_'+room_id).addClass('active'); 
 			displayUsers(rooms[room_id]);
 		}
 
