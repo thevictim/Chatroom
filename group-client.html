@@ -1,4 +1,11 @@
 <!--Hi Dylan!
+	I renamed this to group-client.html so that it doesn't accidentally override our individual portion stuff.
+	All the display.js stuff and other functions go in a javascript section at the bottom
+	The socket.io stuff goes in a separate javascript section below it, just for clarity
+	Put the two files in your node folder, then run "node group-chat-server.js"
+	You dont need to start/stop the server when you make changes to group-client.html
+	You need to restart the server if you change group-chat-server.js
+
 	Things I've done, 04/04/16:
 	Moved creating a div for each room from the room constructor, to line ~104 when a room button is clicked
 	Consolidated things like activating a tab and displaying users into the showRoom function
@@ -8,6 +15,9 @@
 	Made a addMessage function that the socket.io stuff can call
 	Migrated everything into this file so that node can serve just one file
 	Modified the wiki chat code to work on ours! Atm you can chat in the "sun" room
+	Added a nickname!
+	Identify active room and post message to that room
+	Broadcast if a user joins a room (buggy)
 -->
 
 <!DOCTYPE html>
@@ -81,9 +91,12 @@
 	</div>
 	<!-- <script type="text/javascript" src="jQuery/display.js"></script> -->
 	<script type="text/javascript">
+		var socketio = io.connect();
 		// SCRIPT FOR FUNCTIONS
+		// globals
 		rooms = []; // make sure to push to this array whenever a room is made
 		var max_room_id = 0; // increments every time a room is created
+		var nickname;
 
 		function Room(name, creator) { // base room constructor
 			this.name = name
@@ -194,9 +207,11 @@
 					class : "tab-pane pre-scrollable",
 					id :"room_"+id,
 				})); 
-				if (id == 1){
-					addMessage(1, "test user", "test message");
-				}
+				rooms[id].addUser(nickname);				
+				socketio.emit("user_joined_room_to_server", {
+					user:nickname,
+					room:id
+				});
 			}
 			showRoom(id);
 		}
@@ -230,6 +245,16 @@
 				// $(this).tab('show');
 				displayUsers(rooms[id]);
 			});
+			
+			$("#send").on("click", function(event){
+				var msg = $("#message_value").val();
+				var room_id = $('ul.nav-tabs li.active a').attr("href").slice(6);
+				socketio.emit("message_to_server", {
+					message:msg,
+					sender:nickname,
+					room:room_id
+				});
+			});
 		}
 
 		function addMessage(room_id, user, message){
@@ -239,11 +264,30 @@
 					$("<span>").attr('class', 'message').text(message),
 					$("<br>"),
 					$("<small>").attr('class', "text-muted").text(user)
-				));
+					));
+		}
+		
+		function askForUsername(){
+			nickname = prompt("Pick a nickname");
+		}
+
+		function allTheSocketListerners(){
+			socketio.on("message_to_client",function(data) {
+				console.log("2"+data['sender']);				
+			         addMessage(data['room'], data['sender'], data['message']);
+			         // Hardcoded room at the moment. Would 
+			});
+			socketio.on("user_joined_room_to_client",function(data) {
+				console.log("2"+data['room']);
+			         rooms[data["room"]].addUser(data['user']);
+			});
+			
 		}
 
 		function doUponLoading(event){
 			addButtonTabListeners();
+			allTheSocketListerners()
+			askForUsername();
 			// To test things out
 			rooms.push(new PrivateRoom("roomName", "theCreator", "abcd"));
 			rooms.push(new PrivateRoom("Sun", "Moon", "abcd"));
@@ -256,25 +300,8 @@
 			console.log(rooms);
 		}
 
-
-	</script>
-
-	<script type="text/javascript">
-	// SCRIPTS FOR SOCKET.IO STUFF
-	var socketio = io.connect();
-	 socketio.on("message_to_client",function(data) {
-	 	console.log("2"+data['message']);
-         addMessage(1, "Jo", data['message']); // Hardcoded at the moment
-      });
-
-	$("#send").on("click", function(event){
-		var msg = $("#message_value").val();
-		console.log("1"+msg);
-		socketio.emit("message_to_server", {message:msg});
-	});
-
-	// things to do last. In our javascript includes, write all the functions. Execute code here.
-	document.addEventListener("DOMContentLoaded", doUponLoading, false);
-</script>
+		// things to do last. In our javascript includes, write all the functions. Execute code here.
+		document.addEventListener("DOMContentLoaded", doUponLoading, false);
+		 </script>
 </body>
 </html>

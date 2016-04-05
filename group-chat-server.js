@@ -21,9 +21,20 @@ io.sockets.on("connection", function(socket){
 	// This callback runs when a new Socket.IO connection is established.
  
 	socket.on('message_to_server', function(data) {
-		// This callback runs when the server receives a new message from the client.
- 
+		// This callback runs when the server receives a new message from the client. 
 		console.log("message: "+data["message"]); // log it to the Node.JS output
-		io.sockets.emit("message_to_client",{message:data["message"] }) // broadcast the message to other users
+		io.sockets.emit("message_to_client",{
+			message:data["message"],
+			sender:data["sender"],
+			room:data["room"]
+		 }) // broadcast the message to other users
+	});
+
+	socket.on('user_joined_room_to_server', function(data) {
+		console.log("room: "+data["room"]); // log it to the Node.JS output
+		io.sockets.emit("user_joined_room_to_client",{
+			user:data["user"],
+			room:data["room"]
+		 }) // broadcast the message to other users
 	});
 });
