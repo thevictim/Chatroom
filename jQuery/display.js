@@ -75,14 +75,6 @@ function twoPersonRoom(creator, friend) { // base room constructor
 	this.id = max_room_id;
 	max_room_id++; // auto increment the id
 	var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
-
-// 	$('.chatrooms').append($(roomButton).attr({
-// 		class : "list-group-item",
-// 		value : this.name,
-// 	id : this.id,  // id of the room, used to identify tab and tab content
-// 	href :"#room_"+this.id,
-// 	'data-toggle' : "tab"
-// }).text(this.name)); 
 }
 
 function displayUsers(current_room){
