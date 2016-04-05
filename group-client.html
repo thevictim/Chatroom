@@ -98,23 +98,13 @@
 		var max_room_id = 0; // increments every time a room is created
 		var nickname;
 
-		function Room(name, creator, id) { // base room constructor
+		function Room(name, creator) { // base room constructor
 			this.name = name
 			this.creator = creator;
 			this.users = [creator];
-			console.log("provide id? "+(id === undefined));
-			if (!(id === undefined)){
-				this.id = id;
-				if (id > max_room_id){
-					max_room_id = id;
-				}
-			}else{
-				this.id = max_room_id;
-				max_room_id++; // auto increment the id
-			}
-			console.log(arguments.length+" "+name + this.id);
+			this.id = max_room_id;
+			max_room_id++; // auto increment the id
 			var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
- 
 			$('.chatrooms').append($(roomButton).attr({
 				class : "list-group-item",
 				value : this.name,
@@ -151,8 +141,8 @@
 			}
 		}
 
-		function PrivateRoom (name, creator, password, blacklist, id) {
-			Room.call(this, name, creator, id); // use the code from function Room
+		function PrivateRoom (name, creator, password, blacklist) {
+			Room.call(this, name, creator); // use the code from function Room
 			this.password = password; // also set a password
 			if (typeof blacklist === 'undefined'){ // initialize empty blacklist if not specified
 				this.blacklist = [];
@@ -314,10 +304,10 @@
 			allTheSocketListerners()
 			askForUsername();
 			// To test things out
-			rooms.push(new PrivateRoom("roomName", "theCreator", "abcd","blacklist",0));
+			rooms.push(new PrivateRoom("roomName", "theCreator", "abcd"));
 			rooms.push(new PrivateRoom("Sun", "Moon", "abcd"));
 			rooms.push(new PrivateRoom("hey", "hi", "abcd"));
-			testroom = new Room("TestRoom", "Dylan");
+			testroom = new Room("TestRoom", "Dylan","asdd");
 			testroom.users.push('Joe');
 			testroom.users.push('sep');
 			testroom.users.push('ine');
