@@ -1,3 +1,15 @@
+<!--Hi Dylan!
+	Things I've done, 04/04/16:
+	Moved creating a div for each room from the room constructor, to line ~104 when a room button is clicked
+	Consolidated things like activating a tab and displaying users into the showRoom function
+	Refactored the private convo things to make it more object-oriented, make it a room object, to make things more standardized
+	Refactored the code to use the createRoomAndTab, to keep things more standardized
+	Banged my head against the wall but cant seem to fix the bug you mentioned
+	Made a addMessage function that the socket.io stuff can call
+	Migrated everything into this file so that node can serve just one file
+	Modified the wiki chat code to work on ours! Atm you can chat in the "sun" room
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,15 +84,6 @@
 		// SCRIPT FOR FUNCTIONS
 		rooms = []; // make sure to push to this array whenever a room is made
 		var max_room_id = 0; // increments every time a room is created
-
-		// Hi Dylan!
-		// Things I've done, 04/04/16:
-		// Moved creating a div for each room from the room constructor, to line ~104 when a room button is clicked
-		// Consolidated things like activating a tab and displaying users into the showRoom function
-		// Refactored the private convo things to make it more object-oriented, make it a room object, to make things more standardized
-		// Refactored the code to use the createRoomAndTab, to keep things more standardized
-		// Banged my head against the wall but cant seem to fix the bug you mentioned
-		// Made a addMessage function that the socket.io stuff can call
 
 		function Room(name, creator) { // base room constructor
 			this.name = name
@@ -241,11 +244,10 @@
 
 		function doUponLoading(event){
 			addButtonTabListeners();
-			// Where I test things out
+			// To test things out
 			rooms.push(new PrivateRoom("roomName", "theCreator", "abcd"));
 			rooms.push(new PrivateRoom("Sun", "Moon", "abcd"));
 			rooms.push(new PrivateRoom("hey", "hi", "abcd"));
-			// testp = new PrivateRoom("hey", "hi", "abcd")
 			testroom = new Room("TestRoom", "Dylan","asdd");
 			testroom.users.push('Joe');
 			testroom.users.push('sep');
