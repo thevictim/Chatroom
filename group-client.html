@@ -98,14 +98,23 @@
 		var max_room_id = 0; // increments every time a room is created
 		var nickname;
 
-		function Room(name, creator) { // base room constructor
+		function Room(name, creator, id) { // base room constructor
 			this.name = name
 			this.creator = creator;
 			this.users = [creator];
-			this.id = max_room_id;
-			max_room_id++; // auto increment the id
+			console.log("provide id? "+(id === undefined));
+			if (!(id === undefined)){
+				this.id = id;
+				if (id > max_room_id){
+					max_room_id = id;
+				}
+			}else{
+				this.id = max_room_id;
+				max_room_id++; // auto increment the id
+			}
+			console.log(arguments.length+" "+name + this.id);
 			var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
-
+ 
 			$('.chatrooms').append($(roomButton).attr({
 				class : "list-group-item",
 				value : this.name,
@@ -120,6 +129,15 @@
 			addUser:function (user_to_add)  { // methods. Add user to the users array in a room
 				this.users.push(user_to_add);
 				console.log(user_to_add+" added");
+				// FIXME refresh users in room 
+				var userButton = document.createElement("button");
+				$('.current_users').append($(userButton).attr({
+					class : "list-group-item",
+					value : user_to_add,
+					// id : users[i],  // id of the room, used to identify tab and tab content
+					// href :"#room_"+this.id,
+					'data-toggle' : "tab"
+				}).text(user_to_add));
 			},
 			removeUser:function (user_to_remove)  { // Remove user from the users array in a room
 				var index = users.indexOf(user_to_remove); 
@@ -133,8 +151,8 @@
 			}
 		}
 
-		function PrivateRoom (name, creator, password, blacklist) {
-			Room.call(this, name, creator); // use the code from function Room
+		function PrivateRoom (name, creator, password, blacklist, id) {
+			Room.call(this, name, creator, id); // use the code from function Room
 			this.password = password; // also set a password
 			if (typeof blacklist === 'undefined'){ // initialize empty blacklist if not specified
 				this.blacklist = [];
@@ -184,7 +202,7 @@
 		function showRoom(room_id){
 			$('ul.nav-tabs li.active').removeClass('active');
 			$('#tab_'+room_id).addClass('active'); // Why is this not working???
-			// $('#tab_'+room_id).tab('show');
+			$('#tab_'+room_id).tab('show');
 			$('.tab-content .tab-pane.active').removeClass('active');
 			$('#room_'+room_id).addClass('active'); 
 			displayUsers(rooms[room_id]);
@@ -209,7 +227,10 @@
 					class : "tab-pane pre-scrollable",
 					id :"room_"+id,
 				})); 
-				rooms[id].addUser(nickname);				
+				if (!(rooms[id] instanceof twoPersonRoom)){
+					rooms[id].addUser(nickname);
+				}
+				// 				
 				socketio.emit("user_joined_room_to_server", {
 					user:nickname,
 					room:id
@@ -237,7 +258,7 @@
 			$(".nav-tabs").on("click", "button", function(event){
 				var tabContentId = $(this).parent().attr("href");
 		        $(this).parent().parent().remove(); //remove li of tab
-		        $('.nav-tabs a:last').tab('show'); // Select first tab
+		        // $('.nav-tabs a:last').tab('show'); // Select first tab
 		        $(tabContentId).remove(); //remove respective tab content
 		    });
 
@@ -276,13 +297,15 @@
 		function allTheSocketListerners(){
 			socketio.on("message_to_client",function(data) {
 				console.log("2"+data['sender']);				
-			         addMessage(data['room'], data['sender'], data['message']);
+				addMessage(data['room'], data['sender'], data['message']);
 			         // Hardcoded room at the moment. Would 
-			});
+			     });
 			socketio.on("user_joined_room_to_client",function(data) {
 				console.log("2"+data['room']);
+				if (!(rooms[data["room"]] instanceof twoPersonRoom) && (data['user'] != nickname)){ // and the user is not you
 			         rooms[data["room"]].addUser(data['user']);
-			});
+			     }
+			 });
 			
 		}
 
@@ -291,10 +314,10 @@
 			allTheSocketListerners()
 			askForUsername();
 			// To test things out
-			rooms.push(new PrivateRoom("roomName", "theCreator", "abcd"));
+			rooms.push(new PrivateRoom("roomName", "theCreator", "abcd","blacklist",0));
 			rooms.push(new PrivateRoom("Sun", "Moon", "abcd"));
 			rooms.push(new PrivateRoom("hey", "hi", "abcd"));
-			testroom = new Room("TestRoom", "Dylan","asdd");
+			testroom = new Room("TestRoom", "Dylan");
 			testroom.users.push('Joe');
 			testroom.users.push('sep');
 			testroom.users.push('ine');
@@ -304,6 +327,6 @@
 
 		// things to do last. In our javascript includes, write all the functions. Execute code here.
 		document.addEventListener("DOMContentLoaded", doUponLoading, false);
-		 </script>
+	</script>
 </body>
 </html>
