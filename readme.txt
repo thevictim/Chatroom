@@ -1,11 +1,6 @@
 Module 6
 
-lol I'm gonna conclude that what Adam said about only having one file is kinda lame,
-you at least need separate css files for bootstrap >.>
-Guess he meant one node file. The one node file that serves the html file that can draw from anywhere
-
-While we're just making the bootstrap/jQuery/DOM stuff, I'm testing these files out by
-uploading them in public_html.
+Refer to the top of group-client.html
 
 Chatroom
 
