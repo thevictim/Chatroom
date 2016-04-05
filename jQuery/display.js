@@ -53,7 +53,7 @@ function displayUsers(current_room){
 			class : "list-group-item",
 			value : users[i],
 			id : users[i],  // id of the room, used to identify tab and tab content
-			href :"#user_"+users[i],
+			href :"#room_"+this.id,
 			'data-toggle' : "tab"
 		}).text(users[i]));
 	};
@@ -121,30 +121,44 @@ function addButtonTabListeners(){
 		if ($('#tab_'+id).length == 0){ // if tab doesn't already exist
 			var userTab = $("<li>").attr('id','tab_'+id).append(// make and display new tab
 				$("<a>").attr({
-					href :"#user_"+id,
+					href :"#room_"+id,
 					'data-toggle' : "tab"
-				}).text($(this).attr("value"))
+				}).text($(this).attr("value")).append("<button class='close closeTab' type='button' >×</button>")
 			);
 			$('.nav-tabs').append(userTab);
 		}
 		$('ul.nav-tabs li.active').removeClass('active');
 		$('#tab_'+id).addClass('active');
+
+		if ($('#room_'+id).length == 0){
+		var chat_space = document.createElement("div"); 
+			$('.tab-content').append($(chat_space).attr({
+			class : "tab-pane",
+			id :"room_"+this.id,
+		})); 
+		}
 		$(this).tab('show');
+		$('.current_users').empty();
 	});
 
-	$(".closeTab").on("click", "button", function(event){
-		alert("shit");
+	$(".nav-tabs").on("click", "button", function(event){
         var tabContentId = $(this).parent().attr("href");
         $(this).parent().parent().remove(); //remove li of tab
         $('.nav-tabs a:last').tab('show'); // Select first tab
         $(tabContentId).remove(); //remove respective tab content
     });
 
-	// $(".nav-tabs").on("click", "a", function(event){
-	// 		alert("shit 2");
-	// 	event.preventDefault();
-	// 	$(this).tab('show');
-	// })
+	$(".nav-tabs").on("click", "a", function(event){
+		event.preventDefault();
+		var id = $(this).attr("href").slice(6);
+		$(this).tab('show');
+		if (!isNaN(id)) {		
+			displayUsers(rooms[id]);
+		}
+		else{
+		$('.current_users').empty();
+		}
+	})
 
 
 
