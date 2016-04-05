@@ -6,6 +6,9 @@ var max_room_id = 0; // increments every time a room is created
 // Moved creating a div for each room from the room constructor, to line ~104 when a room button is clicked
 // Consolidated things like activating a tab and displaying users into the showRoom function
 // Refactored the private convo things to make it more object-oriented, make it a room object, to make things more standardized
+// Refactored the code to use the createRoomAndTab, to keep things more standardized
+// Banged my head against the wall but cant seem to fix the bug you mentioned
+// Made a addMessage function that the socket.io stuff can call
 
 function Room(name, creator) { // base room constructor
 	this.name = name
