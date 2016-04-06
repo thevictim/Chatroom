@@ -273,10 +273,12 @@
 
 			$(".current_users").on("click", "button", function(event){
 				event.preventDefault();
-				socketio.emit("new_2person_room_to_server", {
-					creator:nickname,
-					room_name:$(this).attr("value")
-				});
+				if ($(this).attr("value") != nickname){ // if user is not yourself
+					socketio.emit("new_2person_room_to_server", {
+						creator:nickname,
+						room_name:$(this).attr("value")
+					});
+				}
 			});
 
 			$(".nav-tabs").on("click", "button", function(event){
@@ -324,6 +326,9 @@
 		
 		function askForUsername(){
 			nickname = prompt("Pick a nickname");
+			// FIXME
+			// force user to input a nickname
+			// to server the username, enforce unique
 		}
 
 		function allTheSocketListerners(){

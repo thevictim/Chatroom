@@ -4,7 +4,7 @@
 
 		rooms = []; // make sure to push to this array whenever a room is made
 		var max_room_id = 0; // increments every time a room is created
-		var nickname;
+		
 
 		function Room(name, creator) { // base room constructor
 			this.type = "room";
@@ -139,7 +139,7 @@ io.sockets.on("connection", function(socket){
 
  	socket.on('message_to_server', function(data) {
 		// This callback runs when the server receives a new message from the client. 
-		console.log("message: "+data["message"]); // log it to the Node.JS output
+		// console.log("message: "+data["message"]); // log it to the Node.JS output
 		io.sockets.emit("message_to_client",{
 			message:data["message"],
 			sender:data["sender"],
@@ -149,6 +149,7 @@ io.sockets.on("connection", function(socket){
 
  	socket.on('user_joined_room_to_server', function(data) {
 		console.log("room: "+data["room"]); // log it to the Node.JS output
+		rooms[data["room"]].addUser(data["user"]);
 		socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
 			user:data["user"],
 			room:data["room"]
@@ -159,7 +160,7 @@ io.sockets.on("connection", function(socket){
 		// This callback runs when the server receives a new message from the client. 
 		var new_room = new Room(data["room_name"], data["creator"]);
 		rooms.push(new_room);
-		io.sockets.emit("new_room_to_client",new_room) // broadcast the message to other users
+		io.sockets.emit("new_room_to_client",new_room); // broadcast the message to other users
 	});
 
 	socket.on('new_2person_room_to_server', function(data) {
