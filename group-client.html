@@ -17,7 +17,10 @@
 	Modified the wiki chat code to work on ours! Atm you can chat in the "sun" room
 	Added a nickname!
 	Identify active room and post message to that room
-	Broadcast if a user joins a room (buggy)
+	A lot more stuff than I'm gonna list >.<
+
+	Currently buggy and need to fix:
+	Two person convo, joining issues, users being added to non-existent rooms (before room created?).
 -->
 
 <!DOCTYPE html>
@@ -48,7 +51,7 @@
 	<div class="row " >
 		<h3 class="text-center" >Chat room website! </h3>
 		<br /><br />
-		<div class="col-md-2">
+		<div class="col-xs-2">
 			<div class="panel panel-primary">
 				<div class="panel-heading">
 					Current users
@@ -66,7 +69,7 @@
 				</ul>
 			</div>
 		</div>
-		<div class="col-md-8">
+		<div class="col-xs-8">
 			<ul class="nav nav-tabs"></ul>
 			<div class="tab-content">				
 			</div>
@@ -79,7 +82,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="col-md-2 ">
+		<div class="col-xs-2 ">
 			<div class="panel panel-primary">
 				<div class="panel-heading">
 					Available Rooms
@@ -88,6 +91,16 @@
 				</ul>
 			</div>
 		</div>
+	</div>
+	<div class="row " >
+		<div class="col-xs-2"></div>
+		<div class="input-group col-xs-4">
+			<input type="text" class="form-control" id = "room_name" placeholder="Create chatroom" />
+			<span class="input-group-btn">
+				<button class="btn btn-info" id = "makeRoom" type="button">Create</button>
+			</span>
+		</div>
+		<!-- FIXME -->
 	</div>
 	<!-- <script type="text/javascript" src="jQuery/display.js"></script> -->
 	<script type="text/javascript">
@@ -98,20 +111,41 @@
 		var max_room_id = 0; // increments every time a room is created
 		var nickname;
 
-		function Room(name, creator) { // base room constructor
-			this.name = name
-			this.creator = creator;
-			this.users = [creator];
-			this.id = max_room_id;
-			max_room_id++; // auto increment the id
+		function makeRoomButton(name, id){
 			var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
 			$('.chatrooms').append($(roomButton).attr({
 				class : "list-group-item",
-				value : this.name,
-			id : this.id,  // id of the room, used to identify tab and tab content
-			href :"#room_"+this.id,
+				value : name,
+			id : id,  // id of the room, used to identify tab and tab content
+			href :"#room_"+id,
 			'data-toggle' : "tab"
-		}).text(this.name)); 
+		}).text(name)); 
+		}
+
+		function Room(name, creator, id) { // base room constructor
+			for (var i = 0; i < rooms.length; i++){
+				if (rooms[i].name == name){ // no duplicate names allowed
+					return rooms[i];
+				}
+			}
+			this.name = name
+			this.creator = creator;
+			this.users = [creator];
+			// this.id = max_room_id;
+			// if id is 
+			// max_room_id++; // auto increment the id
+
+			if (!(id === undefined)){
+				this.id = id;
+				if (id > max_room_id){
+					max_room_id = id;
+				}
+			}else{
+				this.id = max_room_id;
+				max_room_id++; // auto increment the id
+			}
+			makeRoomButton(this.name, this.id);
+
 		}
 
 		Room.prototype = {
@@ -141,8 +175,8 @@
 			}
 		}
 
-		function PrivateRoom (name, creator, password, blacklist) {
-			Room.call(this, name, creator); // use the code from function Room
+		function PrivateRoom (name, creator, id, password, blacklist) {
+			Room.call(this, name, creator, id); // use the code from function Room
 			this.password = password; // also set a password
 			if (typeof blacklist === 'undefined'){ // initialize empty blacklist if not specified
 				this.blacklist = [];
@@ -159,7 +193,7 @@
 			console.log(user_to_ban+" banned");
 		}	
 
-		function twoPersonRoom(creator, friend) { // base room constructor
+		function twoPersonRoom(creator, friend, id) { // base room constructor
 			for (var i = 0; i < rooms.length; i++){
 				if ((rooms[i].name == creator && rooms[i].creator == friend) || (rooms[i].name == friend && rooms[i].creator == creator)){
 					return rooms[i];
@@ -209,7 +243,7 @@
 				// moved this from the room constructor to here
 				$('.nav-tabs').append(roomTab);
 				var chat_space = document.createElement("div");
-				var chat_list_group = document.createElement("ul")
+				var chat_list_group = document.createElement("ul");
 				$(chat_space).append($(chat_list_group).attr({
 					class : "list-group"
 				}));
@@ -218,6 +252,7 @@
 					id :"room_"+id,
 				})); 
 				if (!(rooms[id] instanceof twoPersonRoom)){
+					console.log("trying to add user, id is "+id);
 					rooms[id].addUser(nickname);
 				}
 				// 				
@@ -232,6 +267,7 @@
 		// Detect if tabs or buttons are clicked, if so show their content
 		function addButtonTabListeners(){
 			$(".chatrooms").on("click", "button", function(event){
+				console.log(rooms);
 				event.preventDefault();
 				var id = $(this).attr("id");
 				createRoomAndTab(id, $(this).attr("value"));
@@ -239,10 +275,10 @@
 
 			$(".current_users").on("click", "button", function(event){
 				event.preventDefault();
-				var convoRoom = new twoPersonRoom("person1", $(this).attr("value"));
-				var id = convoRoom.id;
-				rooms.push(convoRoom);
-				createRoomAndTab(id, $(this).attr("value"));
+				socketio.emit("new_2person_room_to_server", {
+					creator:nickname,
+					room_name:$(this).attr("value")
+				});
 			});
 
 			$(".nav-tabs").on("click", "button", function(event){
@@ -268,6 +304,14 @@
 					room:room_id
 				});
 			});
+
+			$("#makeRoom").on("click", function(event){
+				var room_name = $("#room_name").val();
+				socketio.emit("new_room_to_server", {
+					creator:nickname,
+					room_name:room_name
+				});
+			});
 		}
 
 		function addMessage(room_id, user, message){
@@ -286,33 +330,67 @@
 
 		function allTheSocketListerners(){
 			socketio.on("message_to_client",function(data) {
-				console.log("2"+data['sender']);				
 				addMessage(data['room'], data['sender'], data['message']);
 			         // Hardcoded room at the moment. Would 
 			     });
+
 			socketio.on("user_joined_room_to_client",function(data) {
-				console.log("2"+data['room']);
+				// console.log("2"+data['room']);
 				if (!(rooms[data["room"]] instanceof twoPersonRoom) && (data['user'] != nickname)){ // and the user is not you
-			         rooms[data["room"]].addUser(data['user']);
-			     }
-			 });
+					console.log(rooms);
+					console.log("trying to add user, id is "+data["room"]+", room is "+rooms[data["room"]]);
+					rooms[data["room"]].addUser(data['user']);
+				}
+			});
+
+			socketio.on("send_all_rooms",function(data) {
+				console.log("getting all rooms");
+				console.log(data); // Assign rooms to this data... somehow.
+				// rooms = data;
+				for (var i = 0; i < data.length; i++){ // Then run this, cos atm trigger through the constructor.
+					if (data[i].type == "room"){
+						rooms[data[i].id] = (new Room(data[i].name, data[i].creator, data[i].id));
+					}else if (data[i].type == "privateRoom"){
+						rooms[data[i].id] = (new PrivateRoom(data[i].name, data[i].creator, data[i].id, data[i].password));
+					}else if (data[i].type == "twoPersonRoom"){
+						rooms[data[i].id] = (new twoPersonRoom(data[i].name, data[i].creator, data[i].id));
+					}
+				}
+				console.log(rooms);
+			});
+
+			socketio.on("new_room_to_client",function(data) {
+				// Need to make the data into a room object, then push to rooms array
+				// if (data.type == "room"){
+					rooms[data.id] = new Room(data.name, data.creator, data.id);
+				// }else if (data.type == "privateRoom"){ // or we can make this a separate function. 
+				// 	rooms[data.id] = (new PrivateRoom(data.name, data.creator, data.id, data.password, data.blacklist));
+				// }
+			});
+
+			socketio.on("new_2person_room_to_client",function(data) {
+				if (data.name == nickname || data.creator == nickname){
+					rooms[data.id] = new twoPersonRoom(data.name, data.creator, data.id); // if not involved, that index does not exist (no data at that index)
+					createRoomAndTab(data.id, data.name); // this should be split, show tab in own client, create tab in that target person's
+				}
 			
+			});
 		}
 
-		function doUponLoading(event){
-			addButtonTabListeners();
-			allTheSocketListerners()
-			askForUsername();
+			function doUponLoading(event){
+				addButtonTabListeners();
+				allTheSocketListerners()
+				askForUsername();
 			// To test things out
-			rooms.push(new PrivateRoom("roomName", "theCreator", "abcd"));
-			rooms.push(new PrivateRoom("Sun", "Moon", "abcd"));
-			rooms.push(new PrivateRoom("hey", "hi", "abcd"));
-			testroom = new Room("TestRoom", "Dylan","asdd");
-			testroom.users.push('Joe');
-			testroom.users.push('sep');
-			testroom.users.push('ine');
-			rooms.push(testroom);
-			console.log(rooms);
+			// rooms.push(new PrivateRoom("roomName", "theCreator", 0, "abcd"));
+			// rooms.push(new PrivateRoom("Sun", "Moon", 1, "abcd"));
+			// rooms.push(new PrivateRoom("hey", "hi", 2, "abcd"));
+			// testroom = new Room("TestRoom", "Dylan", 3);
+			// testroom.users.push('Joe');
+			// testroom.users.push('sep');
+			// testroom.users.push('ine');
+			// rooms.push(testroom);
+			// console.log(rooms);
 		}
 
 		// things to do last. In our javascript includes, write all the functions. Execute code here.

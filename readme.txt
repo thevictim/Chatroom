@@ -1,6 +1,7 @@
 Module 6
 
 Refer to the top of group-client.html
+This is also useful: http://stackoverflow.com/questions/10058226/send-response-to-all-clients-except-sender-socket-io
 
 Chatroom
 

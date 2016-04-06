@@ -7,13 +7,14 @@
 		var nickname;
 
 		function Room(name, creator) { // base room constructor
-			this.name = name
+			this.type = "room";
+			this.name = name;
 			this.creator = creator;
 			this.users = [creator];
 			this.id = max_room_id;
 		 	max_room_id++; // auto increment the id
 		// 	var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
- 
+
 		// 	$('.chatrooms').append($(roomButton).attr({
 		// 		class : "list-group-item",
 		// 		value : this.name,
@@ -21,9 +22,9 @@
 		// 	href :"#room_"+this.id,
 		// 	'data-toggle' : "tab"
 		// }).text(this.name)); 
-		}
+	}
 
-		Room.prototype = {
+	Room.prototype = {
 			constructor: Room, // assign/(override?) constructor
 			addUser:function (user_to_add)  { // methods. Add user to the users array in a room
 				this.users.push(user_to_add);
@@ -53,6 +54,7 @@
 		function PrivateRoom (name, creator, password, blacklist) {
 			Room.call(this, name, creator); // use the code from function Room
 			this.password = password; // also set a password
+			this.type = "privateRoom"
 			if (typeof blacklist === 'undefined'){ // initialize empty blacklist if not specified
 				this.blacklist = [];
 			}else{
@@ -74,6 +76,7 @@
 					return rooms[i];
 				}
 			}
+			this.type = "twoPersonRoom";
 			this.name = friend;
 			this.creator = creator;
 			this.users = [];
@@ -82,14 +85,24 @@
 			// var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
 		}
 
+		rooms.push(new PrivateRoom("roomName", "theCreator", "abcd"));
+		rooms.push(new PrivateRoom("Sun", "Moon", "abcd"));
+		rooms.push(new PrivateRoom("hey", "hi", "abcd"));
+		rooms.push(new Room("TestRoom", "Dylan"));
+		// testroom.users.push('Joe');
+		// testroom.users.push('sep');
+		// testroom.users.push('ine');
+
+
+		rooms[0].addUser("creatorFriend");
 // ********************
 // Stuff for socket.io
 // ********************
 
 // Require the packages we will use:
 var http = require("http"),
-	socketio = require("socket.io"),
-	fs = require("fs");
+socketio = require("socket.io"),
+fs = require("fs");
 
 // Listen for HTTP connections.  This is essentially a miniature static file server that only serves our one file, client.html:
 var app = http.createServer(function(req, resp){
@@ -102,13 +115,29 @@ var app = http.createServer(function(req, resp){
 	});
 });
 app.listen(3456);
- 
+
 // Do the Socket.IO magic:
 var io = socketio.listen(app);
 io.sockets.on("connection", function(socket){
 	// This callback runs when a new Socket.IO connection is established.
- 
-	socket.on('message_to_server', function(data) {
+	sendAllRooms();
+ 	// send all rooms
+ 	function sendAllRooms(){
+ 		// var roomDetails = '{"roomDetails":[';
+ 		// for (var i = 0; i < rooms.length; i++){
+ 		// 	roomDetails = roomDetails+'{"name":"'+rooms[i].name+'","creator":"'+rooms[i].creator+'","users":['+rooms[i].users+'],"id":'+rooms[i].id+'}'; // with "" for strings
+ 		// 	// roomDetails = roomDetails+'{name:'+rooms[i].name+',creator:'+rooms[i].creator+',users:['+rooms[i].users+'],id:'+rooms[i].id+'}'; // without ""
+ 		// 	if (i != rooms.length-1){
+ 		// 		roomDetails += ',';
+ 		// 	}
+ 		// }
+ 		// roomDetails+=']}'
+ 		// io.sockets.emit("send_all_rooms",roomDetails);
+ 		console.log(rooms);
+ 		socket.emit("send_all_rooms",rooms);
+ 	}
+
+ 	socket.on('message_to_server', function(data) {
 		// This callback runs when the server receives a new message from the client. 
 		console.log("message: "+data["message"]); // log it to the Node.JS output
 		io.sockets.emit("message_to_client",{
@@ -118,14 +147,28 @@ io.sockets.on("connection", function(socket){
 		 }) // broadcast the message to other users
 	});
 
-	socket.on('user_joined_room_to_server', function(data) {
+ 	socket.on('user_joined_room_to_server', function(data) {
 		console.log("room: "+data["room"]); // log it to the Node.JS output
-		io.sockets.emit("user_joined_room_to_client",{
+		socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
 			user:data["user"],
 			room:data["room"]
 		 }) // broadcast the message to other users
 	});
-});
+
+ 	socket.on('new_room_to_server', function(data) {
+		// This callback runs when the server receives a new message from the client. 
+		var new_room = new Room(data["room_name"], data["creator"]);
+		rooms.push(new_room);
+		io.sockets.emit("new_room_to_client",new_room) // broadcast the message to other users
+	});
+
+	socket.on('new_2person_room_to_server', function(data) {
+		// This callback runs when the server receives a new message from the client.
+		var new_2p_room = new twoPersonRoom(data["room_name"], data["creator"]);
+		rooms.push(new_2p_room);
+		io.sockets.emit("new_2person_room_to_client",new_2p_room) // broadcast the message to other users
+	});
+ });
 
 
 
