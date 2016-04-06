@@ -369,10 +369,14 @@
 			});
 
 			socketio.on("new_2person_room_to_client",function(data) {
-				// if (data.name == nickname || data.creator == nickname){
 					rooms[data.id] = new twoPersonRoom(data.name, data.creator, data.id); // if not involved, that index does not exist (no data at that index)
-					createRoomAndTab(data.id, data.name); // this should be split, show tab in own client, create tab in that target person's
-				// }
+					if (data.name == nickname){
+						console.log("here");
+					createRoomAndTab(data.id, data.creator); // this should be split, show tab in own client, create tab in that target person's
+					} else if (data.creator == nickname){
+						console.log("there");
+						createRoomAndTab(data.id, data.name);
+					}
 			
 			});
 		}
