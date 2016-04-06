@@ -100,7 +100,6 @@
 				<button class="btn btn-info" id = "makeRoom" type="button">Create</button>
 			</span>
 		</div>
-		<!-- FIXME -->
 	</div>
 	<!-- <script type="text/javascript" src="jQuery/display.js"></script> -->
 	<script type="text/javascript">
@@ -153,7 +152,6 @@
 			addUser:function (user_to_add)  { // methods. Add user to the users array in a room
 				this.users.push(user_to_add);
 				console.log(user_to_add+" added");
-				// FIXME refresh users in room 
 				var userButton = document.createElement("button");
 				$('.current_users').append($(userButton).attr({
 					class : "list-group-item",
@@ -335,6 +333,8 @@
 			     });
 
 			socketio.on("user_joined_room_to_client",function(data) {
+				// buggy?
+
 				// console.log("2"+data['room']);
 				if (!(rooms[data["room"]] instanceof twoPersonRoom) && (data['user'] != nickname)){ // and the user is not you
 					console.log(rooms);
@@ -369,10 +369,10 @@
 			});
 
 			socketio.on("new_2person_room_to_client",function(data) {
-				if (data.name == nickname || data.creator == nickname){
+				// if (data.name == nickname || data.creator == nickname){
 					rooms[data.id] = new twoPersonRoom(data.name, data.creator, data.id); // if not involved, that index does not exist (no data at that index)
 					createRoomAndTab(data.id, data.name); // this should be split, show tab in own client, create tab in that target person's
-				}
+				// }
 			
 			});
 		}
