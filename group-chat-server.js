@@ -40,11 +40,11 @@
 				// }).text(user_to_add));
 			},
 			removeUser:function (user_to_remove)  { // Remove user from the users array in a room
-				var index = users.indexOf(user_to_remove); 
+				var index = this.users.indexOf(user_to_remove); 
 				if (index > -1) {
-					users.splice(index, 1);
+					this.users.splice(index, 1);
 					console.log(user_to_remove+" removed");
-					if (users.length == 0){
+					if (this.users.length == 0){
 						console.log("no more users in room");
 					}
 				}
@@ -177,12 +177,12 @@ io.sockets.on("connection", function(socket){
 				room:data["room"]
 			 }) // broadcast the message to other users
 		}
-		else{
-			socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
-				user:data["user"],
-				room:data["room"]
-		 }) // broadcast the message to other users
-		}
+		// else{
+		// 	socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
+		// 		user:data["user"],
+		// 		room:data["room"]
+		//  }) // broadcast the message to other users
+		// }
 	});
 
  	socket.on('new_room_to_server', function(data) {
@@ -196,16 +196,27 @@ io.sockets.on("connection", function(socket){
 		// This callback runs when the server receives a new message from the client.
 		var new_2p_room = new twoPersonRoom(data["room_name"], data["creator"]);
 		rooms.push(new_2p_room);
-		io.sockets.emit("new_2person_room_to_client",new_2p_room) // broadcast the message to other users
+		io.sockets.emit("new_2person_room_to_client",new_2p_room); // broadcast the message to other users
 	});
 
 	socket.on('new_private_room_to_server', function(data) {
 		// This callback runs when the server receives a new message from the client.
 		var new_p_room = new PrivateRoom(data["room_name"], data["creator"], data["password"],[]);
 		rooms.push(new_p_room);
-		io.sockets.emit("new_private_room_to_client",new_p_room) // broadcast the message to other users
+		io.sockets.emit("new_private_room_to_client",new_p_room); // broadcast the message to other users
 	});
 
+	socket.on('kick_from_room_to_server', function(data) {
+		if (rooms[data['room']].creator == data['user_performing_action'] && rooms[data['room']].type == "privateRoom" && (rooms[data['room']].users.indexOf(data['user_to_kick']) >-1) ){
+			console.log("before remove users are "+rooms[data['room']].users);
+			rooms[data['room']].removeUser(data['user_to_kick']);
+			console.log("emitting");
+			io.sockets.emit("kick_from_room_to_client",{ // added broadcast here.
+				user:data["user_to_kick"],
+				room:data["room"]
+		}); // broadcast the message to other users
+		}
+	});
 
 	
 

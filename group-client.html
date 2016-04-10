@@ -83,7 +83,7 @@
 					Current users
 				</div>
 				<ul class="list-group current_users">
-					<li class="list-group-item">
+<!-- 					<li class="list-group-item">
 						<h5>Josephine Lee  </h5>
 					</li>
 					<li class="list-group-item">				
@@ -91,7 +91,7 @@
 					</li>
 					<li class="list-group-item">
 						<h5>Random Shit </h5>
-					</li>
+					</li> -->
 				</ul>
 			</div>
 		</div>
@@ -119,21 +119,30 @@
 		</div>
 	</div>
 	<div class="row " >
-		<!-- <div class="col-xs-2"></div> -->
+		<div class="col-xs-2"></div>
 		<div class="input-group col-xs-4">
+		<div class="input-group col-xs-6">
 			<input type="text" class="form-control" id = "room_name" placeholder="Create public room" />
 			<span class="input-group-btn">
 				<button class="btn btn-info" id = "makeRoom" type="button">Create</button>
 			</span>
 		</div>
-
-		<div class="input-group col-xs-4">
+		<div class="input-group col-xs-6">			
 			<input type="text" class="form-control" id = "p_room_name" placeholder="Create private room" />
 			<span class="input-group-btn">
 				<button class="btn btn-info" id = "makePRoom" type="button">Create</button>
 			</span>
 		</div>
-
+		<div class="input-group col-xs-6">
+			<input type="text" class="form-control" id = "user_to_ban" placeholder="Nickname" />
+				<span class="input-group-btn">
+					<button class="btn btn-info" id = "kickUser" type="button">Kick</button>
+				</span>
+				<span class="input-group-btn">
+					<button class="btn btn-info" id = "banUser" type="button">Ban</button>
+				</span>
+		</div>
+		</div>
 	</div>
 
 	<ul class='custom-menu'>
@@ -202,11 +211,11 @@
 				}).text(user_to_add));
 			},
 			removeUser:function (user_to_remove)  { // Remove user from the users array in a room
-				var index = users.indexOf(user_to_remove); 
+				var index = this.users.indexOf(user_to_remove); 
 				if (index > -1) {
-					users.splice(index, 1);
+					this.users.splice(index, 1);
 					console.log(user_to_remove+" removed");
-					if (users.length == 0){
+					if (this.users.length == 0){
 						console.log("no more users in room");
 					}
 				}
@@ -412,8 +421,29 @@
 				});
 				$('#p_room_name').val('');
 				}
+			});
+
+			$("#kickUser").on("click", function(event){
+				console.log("kicking");
+				var user_name = $("#user_to_ban").val();
+				var room_id = $('ul.nav-tabs li.active').attr("id").slice(4);
+				if(user_name == ''){
+					alert("Please enter a nickname");
+				} else if(!rooms[room_id] instanceof PrivateRoom || rooms[room_id].creator != nickname){
+					alert("You can only kick someone from a priavte room you created!")
+				}
+				else{
+					console.log("emitting");
+					socketio.emit("kick_from_room_to_server", {
+					room:room_id,
+					user_to_kick:user_name,
+					user_performing_action:nickname
+				});
+				$('#p_room_name').val('');
+				}
 			
 			});
+
 		}
 
 		function addMessage(room_id, user, message){
@@ -503,6 +533,25 @@
 					}
 			
 			});
+
+			socketio.on("kick_from_room_to_client",function(data) {
+				rooms[data['room']].removeUser(data['user']);
+				if (nickname == data['user']){
+					//var href = 'a[href="#room_'+data['room']+'""]';
+					var tab_content = '#room_'+data['room'];
+					var tab = "#tab_"+data['room'];
+					$(tab).remove();
+					$(tab_content).remove();
+				}
+				// $(".nav-tabs").on("click", "button", function(event){
+				// 	var tabContentId = $(this).parent().attr("href");
+			 //        $(this).parent().parent().remove(); //remove li of tab
+			 //        // $('.nav-tabs a:last').tab('show'); // Select first tab
+			 //        $(tabContentId).remove(); //remove respective tab content
+		  //   	});
+
+			});
+
 		}
 
 		function rightclick(){
