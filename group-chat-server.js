@@ -5,6 +5,7 @@
 		rooms = []; // make sure to push to this array whenever a room is made
 		var max_room_id = 0; // increments every time a room is created
 		online_users = [''];
+		var now = new Date();
 
 		function Room(name, creator) { // base room constructor
 			this.type = "room";
@@ -117,7 +118,7 @@ var app = http.createServer(function(req, resp){
 app.listen(3456);
 
 // Do the Socket.IO magic:
-var io = socketio.listen(app);
+	var io = socketio.listen(app);
 io.sockets.on("connection", function(socket){
 	// This callback runs when a new Socket.IO connection is established.
 	sendAllRooms();
@@ -155,10 +156,12 @@ io.sockets.on("connection", function(socket){
  	socket.on('message_to_server', function(data) {
 		// This callback runs when the server receives a new message from the client. 
 		// console.log("message: "+data["message"]); // log it to the Node.JS output
+		now = new Date();
 		io.sockets.emit("message_to_client",{
 			message:data["message"],
 			sender:data["sender"],
-			room:data["room"]
+			room:data["room"],
+			time:now
 		 }) // broadcast the message to other users
 	});
 
@@ -240,6 +243,14 @@ io.sockets.on("connection", function(socket){
 		}
 	});
 
+	socket.on('user_leave_to_server', function(data) {
+		console.log(data["room"]);
+		rooms[data['room']].removeUser(data['user']);
+		io.sockets.emit("user_leave_to_client",{ // added broadcast here.
+				user:data["user"],
+				room:data["room"]
+		});
+	});
 	
 
 

@@ -120,7 +120,7 @@
 	</div>
 	<div class="row " >
 		<div class="col-xs-2"></div>
-		<div class="input-group col-xs-4">
+		<div class="input-group col-xs-6">
 		<div class="input-group col-xs-6">
 			<input type="text" class="form-control" id = "room_name" placeholder="Create public room" />
 			<span class="input-group-btn">
@@ -158,6 +158,18 @@
 		online_users = []; 
 		var max_room_id = 0; // increments every time a room is created
 		var nickname;
+
+		function formatAMPM(date) { // from the same stackoverflow post we referenced in module 5
+		  // prints time of date as eg 5:00pm
+		  var hours = date.getHours();
+		  var minutes = date.getMinutes();
+		  var ampm = hours >= 12 ? 'pm' : 'am';
+		  hours = hours % 12;
+		  hours = hours ? hours : 12; // the hour '0' should be '12'
+		  minutes = minutes < 10 ? '0'+minutes : minutes;
+		  var strTime = hours + ':' + minutes + ampm;
+		  return strTime;
+		}
 
 		function makeRoomButton(name, id){
 			var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
@@ -376,6 +388,10 @@
 		        $(this).parent().parent().remove(); //remove li of tab
 		        // $('.nav-tabs a:last').tab('show'); // Select first tab
 		        $(tabContentId).remove(); //remove respective tab content
+		        socketio.emit("user_leave_to_server", {
+					user:nickname,
+					room:tabContentId.slice(6)
+				});
 		    });
 
 			$(".nav-tabs").on("click", "a", function(event){
@@ -395,6 +411,18 @@
 				});
 				$('#message_value').val('');
 				// $('#message_value').text('');
+			});
+
+			$('#message_value').keyup(function (e) {
+			    if (e.keyCode == 13) {
+			        var msg = $("#message_value").val();
+					var room_id = $('ul.nav-tabs li.active a').attr("href").slice(6);
+					socketio.emit("message_to_server", {
+						message:msg,
+						sender:nickname,
+						room:room_id
+					});
+			    }
 			});
 
 			$("#makeRoom").on("click", function(event){
@@ -470,13 +498,13 @@
 
 		}
 
-		function addMessage(room_id, user, message){
+		function addMessage(room_id, user, message, time){
 			// call this in the socket.io stuff
 			$('#room_'+room_id+' .list-group').append(
 				$("<li>").attr('class', 'list-group-item').append(
 					$("<span>").attr('class', 'message').text(message),
 					$("<br>"),
-					$("<small>").attr('class', "text-muted").text(user)
+					$("<small>").attr('class', "text-muted").text(user+" at "+time)
 					));
 		}
 		
@@ -504,7 +532,8 @@
 			     });
 
 			socketio.on("message_to_client",function(data) {
-				addMessage(data['room'], data['sender'], data['message']);
+				var time = formatAMPM(new Date(data['time']));
+				addMessage(data['room'], data['sender'], data['message'], time);
 			         // Hardcoded room at the moment. Would 
 			     });
 
@@ -583,8 +612,14 @@
 					$('.nav-tabs a:last').tab('show'); // Select first tab
 				}
 			});
+			
 			socketio.on("cannot_join",function(data) {
 				alert("You have been banned from this room");
+			});
+			
+			socketio.on("user_leave_to_client",function(data) {
+				rooms[data['room']].removeUser(data['user']);
+				displayUsers(rooms[data['room']]);
 			});
 			
 
