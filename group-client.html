@@ -408,6 +408,9 @@
 
 			$("#makePRoom").on("click", function(event){
 				var pw = prompt("Enter Password for this privateroom");
+				while (pw==null){
+					pw = prompt("Enter Password for this privateroom");
+				}
 				var room_name = $("#p_room_name").val();
 				if(room_name == ''){
 					alert("Please enter chatroom name");
@@ -479,7 +482,7 @@
 			// alert($.inArray(temp, online_users )==-1);
 			if(online_users.indexOf(temp)!=-1){
 			temp = prompt("Pick a nickname ");
-			while(online_users.indexOf(temp)!=-1){
+			while(online_users.indexOf(temp)!=-1 || temp == null){
 			temp = prompt("Nickname exists. Pick another nickname");
 			}		
 
