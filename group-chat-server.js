@@ -220,7 +220,7 @@ io.sockets.on("connection", function(socket){
 	});
 
 	socket.on('ban_from_room_to_server', function(data) {
-		if (rooms[data['room']].creator == data['user_performing_action'] && rooms[data['room']].type == "privateRoom" && (rooms[data['room']].users.indexOf(data['user_to_ban']) >-1) ){
+		if (rooms[data['room']].creator == data['user_performing_action'] && rooms[data['room']].type == "privateRoom" ){
 			//console.log("before remove users are "+rooms[data['room']].users);
 			rooms[data['room']].removeUser(data['user_to_ban']);
 			rooms[data['room']].banUser(data['user_to_ban']);
