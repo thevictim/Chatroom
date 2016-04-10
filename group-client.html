@@ -299,35 +299,40 @@
 		}
 
 		function createRoomAndTab(id, name){
-			if ($('#tab_'+id).length == 0){ // if tab doesn't already exist
-				var roomTab = $("<li>").attr('id','tab_'+id).append(// make and display new tab
-					$("<a>").attr({
-						href :"#room_"+id,
-						'data-toggle' : "tab"
-					}).text(name).append("<button class='close closeTab' type='button' >×</button>")
-					);
-				// moved this from the room constructor to here
-				$('.nav-tabs').append(roomTab);
-				var chat_space = document.createElement("div");
-				var chat_list_group = document.createElement("ul");
-				$(chat_space).append($(chat_list_group).attr({
-					class : "list-group"
-				}));
-				$('.tab-content').append($(chat_space).attr({
-					class : "tab-pane pre-scrollable",
-					id :"room_"+id,
-				})); 
-				if (!(rooms[id] instanceof twoPersonRoom)){
-					console.log("trying to add user, id is "+id);
-					rooms[id].addUser(nickname);
-				}
-				// 				
-				socketio.emit("user_joined_room_to_server", {
-					user:nickname,
-					room:id
-				});
+			if (rooms[id] instanceof PrivateRoom && rooms[id].blacklist.indexOf(nickname) > -1){ // if not on the blacklist
+				alert("You have been banned from this room");
 			}
-			showRoom(id);
+			else{
+				if ($('#tab_'+id).length == 0){ // if tab doesn't already exist
+					var roomTab = $("<li>").attr('id','tab_'+id).append(// make and display new tab
+						$("<a>").attr({
+							href :"#room_"+id,
+							'data-toggle' : "tab"
+						}).text(name).append("<button class='close closeTab' type='button' >×</button>")
+						);
+					// moved this from the room constructor to here
+					$('.nav-tabs').append(roomTab);
+					var chat_space = document.createElement("div");
+					var chat_list_group = document.createElement("ul");
+					$(chat_space).append($(chat_list_group).attr({
+						class : "list-group"
+					}));
+					$('.tab-content').append($(chat_space).attr({
+						class : "tab-pane pre-scrollable",
+						id :"room_"+id,
+					})); 
+					if (!(rooms[id] instanceof twoPersonRoom)){
+						console.log("trying to add user, id is "+id);
+						rooms[id].addUser(nickname);
+					}
+					// 				
+					socketio.emit("user_joined_room_to_server", {
+						user:nickname,
+						room:id
+					});
+				}
+				showRoom(id);
+			}
 		}
 
 		// Detect if tabs or buttons are clicked, if so show their content
@@ -430,7 +435,7 @@
 				if(user_name == ''){
 					alert("Please enter a nickname");
 				} else if(!rooms[room_id] instanceof PrivateRoom || rooms[room_id].creator != nickname){
-					alert("You can only kick someone from a priavte room you created!")
+					alert("You can only kick someone from a private room you created!")
 				}
 				else{
 					console.log("emitting");
@@ -440,8 +445,27 @@
 					user_performing_action:nickname
 				});
 				$('#p_room_name').val('');
+				}			
+			});
+
+			$("#banUser").on("click", function(event){
+				console.log("banning");
+				var user_name = $("#user_to_ban").val();
+				var room_id = $('ul.nav-tabs li.active').attr("id").slice(4);
+				if(user_name == ''){
+					alert("Please enter a nickname");
+				} else if(!rooms[room_id] instanceof PrivateRoom || rooms[room_id].creator != nickname){
+					alert("You can only ban someone from a private room you created!")
 				}
-			
+				else{
+					console.log("emitting ban");
+					socketio.emit("ban_from_room_to_server", {
+					room:room_id,
+					user_to_ban:user_name,
+					user_performing_action:nickname
+				});
+				$('#p_room_name').val('');
+				}			
 			});
 
 		}
@@ -542,15 +566,27 @@
 					var tab = "#tab_"+data['room'];
 					$(tab).remove();
 					$(tab_content).remove();
+					alert("You have been kicked");
+					$('.nav-tabs a:last').tab('show'); // Select first tab
 				}
-				// $(".nav-tabs").on("click", "button", function(event){
-				// 	var tabContentId = $(this).parent().attr("href");
-			 //        $(this).parent().parent().remove(); //remove li of tab
-			 //        // $('.nav-tabs a:last').tab('show'); // Select first tab
-			 //        $(tabContentId).remove(); //remove respective tab content
-		  //   	});
-
 			});
+			socketio.on("ban_from_room_to_client",function(data) {
+				rooms[data['room']].removeUser(data['user']);
+				rooms[data['room']].banUser(data['user']);
+				if (nickname == data['user']){
+					//var href = 'a[href="#room_'+data['room']+'""]';
+					var tab_content = '#room_'+data['room'];
+					var tab = "#tab_"+data['room'];
+					$(tab).remove();
+					$(tab_content).remove();
+					alert("You have been banned");
+					$('.nav-tabs a:last').tab('show'); // Select first tab
+				}
+			});
+			socketio.on("cannot_join",function(data) {
+				alert("You have been banned from this room");
+			});
+			
 
 		}
 

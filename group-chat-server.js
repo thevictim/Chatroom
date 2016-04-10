@@ -170,12 +170,21 @@ io.sockets.on("connection", function(socket){
 				room:data["room"]
 			 }) // broadcast the message to other users
 		}
-		else if(rooms[data["room"]].users.indexOf(data["user"])==-1){
-			rooms[data["room"]].addUser(data["user"]);
-			socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
-				user:data["user"],
-				room:data["room"]
-			 }) // broadcast the message to other users
+		else if(rooms[data["room"]].users.indexOf(data["user"])==-1){ // if user is not already in room
+			if (rooms[data["room"]].type == "privateRoom" && rooms[data["room"]].blacklist.indexOf(data["user"])>-1){ // if on the blacklist
+				console.log("banned usr attempt to join");
+				socket.emit("cannot_join",{ // added broadcast here.
+					message:"You have been banned from this room"
+			 	});
+			}
+			else{
+				console.log("user joining");
+				rooms[data["room"]].addUser(data["user"]);
+				socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
+					user:data["user"],
+					room:data["room"]
+				 }); // broadcast the message to other users
+			}
 		}
 		// else{
 		// 	socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
@@ -208,11 +217,24 @@ io.sockets.on("connection", function(socket){
 
 	socket.on('kick_from_room_to_server', function(data) {
 		if (rooms[data['room']].creator == data['user_performing_action'] && rooms[data['room']].type == "privateRoom" && (rooms[data['room']].users.indexOf(data['user_to_kick']) >-1) ){
-			console.log("before remove users are "+rooms[data['room']].users);
+			//console.log("before remove users are "+rooms[data['room']].users);
 			rooms[data['room']].removeUser(data['user_to_kick']);
 			console.log("emitting");
 			io.sockets.emit("kick_from_room_to_client",{ // added broadcast here.
 				user:data["user_to_kick"],
+				room:data["room"]
+		}); // broadcast the message to other users
+		}
+	});
+
+	socket.on('ban_from_room_to_server', function(data) {
+		if (rooms[data['room']].creator == data['user_performing_action'] && rooms[data['room']].type == "privateRoom" && (rooms[data['room']].users.indexOf(data['user_to_ban']) >-1) ){
+			//console.log("before remove users are "+rooms[data['room']].users);
+			rooms[data['room']].removeUser(data['user_to_ban']);
+			rooms[data['room']].banUser(data['user_to_ban']);
+			console.log("emitting ban");
+			io.sockets.emit("ban_from_room_to_client",{ // added broadcast here.
+				user:data["user_to_ban"],
 				room:data["room"]
 		}); // broadcast the message to other users
 		}
