@@ -214,13 +214,14 @@
 				this.users.push(user_to_add);
 				console.log(user_to_add+" added");
 				var userButton = document.createElement("button");
-				$('.current_users').append($(userButton).attr({
-					class : "list-group-item",
-					value : user_to_add,
-					// id : users[i],  // id of the room, used to identify tab and tab content
-					// href :"#room_"+this.id,
-					'data-toggle' : "tab"
-				}).text(user_to_add));
+				displayUsers(this);
+				// $('.current_users').append($(userButton).attr({
+				// 	class : "list-group-item",
+				// 	value : user_to_add,
+				// 	// id : users[i],  // id of the room, used to identify tab and tab content
+				// 	// href :"#room_"+this.id,
+				// 	'data-toggle' : "tab"
+				// }).text(user_to_add));
 			},
 			removeUser:function (user_to_remove)  { // Remove user from the users array in a room
 				var index = this.users.indexOf(user_to_remove); 
