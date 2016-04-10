@@ -1,28 +1,3 @@
-<!--Hi Dylan!
-	I renamed this to group-client.html so that it doesn't accidentally override our individual portion stuff.
-	All the display.js stuff and other functions go in a javascript section at the bottom
-	The socket.io stuff goes in a separate javascript section below it, just for clarity
-	Put the two files in your node folder, then run "node group-chat-server.js"
-	You dont need to start/stop the server when you make changes to group-client.html
-	You need to restart the server if you change group-chat-server.js
-
-	Things I've done, 04/04/16:
-	Moved creating a div for each room from the room constructor, to line ~104 when a room button is clicked
-	Consolidated things like activating a tab and displaying users into the showRoom function
-	Refactored the private convo things to make it more object-oriented, make it a room object, to make things more standardized
-	Refactored the code to use the createRoomAndTab, to keep things more standardized
-	Banged my head against the wall but cant seem to fix the bug you mentioned
-	Made a addMessage function that the socket.io stuff can call
-	Migrated everything into this file so that node can serve just one file
-	Modified the wiki chat code to work on ours! Atm you can chat in the "sun" room
-	Added a nickname!
-	Identify active room and post message to that room
-	A lot more stuff than I'm gonna list >.<
-
-	Currently buggy and need to fix:
-	Two person convo, joining issues, users being added to non-existent rooms (before room created?).
--->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,16 +57,7 @@
 				<div class="panel-heading">
 					Current users
 				</div>
-				<ul class="list-group current_users">
-<!-- 					<li class="list-group-item">
-						<h5>Josephine Lee  </h5>
-					</li>
-					<li class="list-group-item">				
-						<h5>Dylan Chen </h5>
-					</li>
-					<li class="list-group-item">
-						<h5>Random Shit </h5>
-					</li> -->
+				<ul class="list-group current_users"> <!-- panel of users -->
 				</ul>
 			</div>
 		</div>
@@ -151,9 +117,8 @@
 	</ul>
 	<!-- <script type="text/javascript" src="jQuery/display.js"></script> -->
 	<script type="text/javascript">
-		var socketio = io.connect();
-		// SCRIPT FOR FUNCTIONS
 		// globals
+		var socketio = io.connect();
 		rooms = []; // make sure to push to this array whenever a room is made
 		online_users = []; 
 		var max_room_id = 0; // increments every time a room is created
