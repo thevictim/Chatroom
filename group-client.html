@@ -40,6 +40,32 @@
 			padding: 10px 15px;
 			text-align: center;
 		}
+	.custom-menu {
+	    display: none;
+	    z-index: 1000;
+	    position: absolute;
+	    overflow: hidden;
+	    border: 1px solid #CCC;
+	    white-space: nowrap;
+	    font-family: sans-serif;
+	    background: #FFF;
+	    color: #333;
+	    border-radius: 5px;
+	    padding: 0;
+	}
+
+	/* Each of the items in the list */
+	.custom-menu li {
+	    padding: 8px 12px;
+	    cursor: pointer;
+	    list-style-type: none;
+	    transition: all .3s ease;
+	}
+
+	.custom-menu li:hover {
+	    background-color: #DEF;
+	}
+
 	</style>
 	<!-- bootstrap javascript -->
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> <!-- must be included before bootstrap.min.js -->
@@ -93,20 +119,34 @@
 		</div>
 	</div>
 	<div class="row " >
-		<div class="col-xs-2"></div>
+		<!-- <div class="col-xs-2"></div> -->
 		<div class="input-group col-xs-4">
-			<input type="text" class="form-control" id = "room_name" placeholder="Create chatroom" />
+			<input type="text" class="form-control" id = "room_name" placeholder="Create public room" />
 			<span class="input-group-btn">
 				<button class="btn btn-info" id = "makeRoom" type="button">Create</button>
 			</span>
 		</div>
+
+		<div class="input-group col-xs-4">
+			<input type="text" class="form-control" id = "p_room_name" placeholder="Create private room" />
+			<span class="input-group-btn">
+				<button class="btn btn-info" id = "makePRoom" type="button">Create</button>
+			</span>
+		</div>
+
 	</div>
+
+	<ul class='custom-menu'>
+  		<li data-action="ban">Farewell</li>
+  		<li data-action="kick">Get out</li>
+	</ul>
 	<!-- <script type="text/javascript" src="jQuery/display.js"></script> -->
 	<script type="text/javascript">
 		var socketio = io.connect();
 		// SCRIPT FOR FUNCTIONS
 		// globals
 		rooms = []; // make sure to push to this array whenever a room is made
+		online_users = []; 
 		var max_room_id = 0; // increments every time a room is created
 		var nickname;
 
@@ -209,6 +249,25 @@
 			$('.current_users').empty();
 			// need to remove the current user first; then add 
 			users = current_room.users;
+			for (var i = users.length - 1; i >= 0; i--) {
+				if(users[i]!=''){
+					var userButton = document.createElement("button"); // whenever a room is created, add a button for it
+				$('.current_users').append($(userButton).attr({
+					class : "list-group-item",
+					value : users[i],
+					// id : users[i],  // id of the room, used to identify tab and tab content
+					// href :"#room_"+this.id,
+					'data-toggle' : "tab"
+				}).text(users[i]));
+				}	
+			};
+		}
+
+
+		function displayOnlineUsers(){
+			$('.current_users').empty();
+			// need to remove the current user first; then add 
+			users = online_users;
 			for (var i = users.length - 1; i >= 0; i--) {	
 				var userButton = document.createElement("button"); // whenever a room is created, add a button for it
 				$('.current_users').append($(userButton).attr({
@@ -265,10 +324,21 @@
 		// Detect if tabs or buttons are clicked, if so show their content
 		function addButtonTabListeners(){
 			$(".chatrooms").on("click", "button", function(event){
-				console.log(rooms);
 				event.preventDefault();
 				var id = $(this).attr("id");
-				createRoomAndTab(id, $(this).attr("value"));
+				if (rooms[id] instanceof PrivateRoom){
+					var pw = prompt("Enter Password");
+					if (pw == rooms[id].password){
+						createRoomAndTab(id, $(this).attr("value"));
+					}
+					else{
+						alert("Wrong Password");
+					}
+				}
+				else{
+					createRoomAndTab(id, $(this).attr("value"));
+				}
+				
 			});
 
 			$(".current_users").on("click", "button", function(event){
@@ -278,6 +348,12 @@
 						creator:nickname,
 						room_name:$(this).attr("value")
 					});
+				}
+			});
+
+			$(".current_users").mousedown(function(event){
+				if(event.which ==3){
+					rightclick();
 				}
 			});
 
@@ -303,14 +379,40 @@
 					sender:nickname,
 					room:room_id
 				});
+				$('#message_value').val('');
+				// $('#message_value').text('');
 			});
 
 			$("#makeRoom").on("click", function(event){
 				var room_name = $("#room_name").val();
-				socketio.emit("new_room_to_server", {
+				if(room_name == ''){
+					alert("Please enter chatroom name");
+				}
+				else{
+					socketio.emit("new_room_to_server", {
 					creator:nickname,
 					room_name:room_name
 				});
+				$('#room_name').val('');
+				}
+			
+			});
+
+			$("#makePRoom").on("click", function(event){
+				var pw = prompt("Enter Password for this privateroom");
+				var room_name = $("#p_room_name").val();
+				if(room_name == ''){
+					alert("Please enter chatroom name");
+				}
+				else{
+					socketio.emit("new_private_room_to_server", {
+					creator:nickname,
+					room_name:room_name,
+					password:pw
+				});
+				$('#p_room_name').val('');
+				}
+			
 			});
 		}
 
@@ -325,13 +427,28 @@
 		}
 		
 		function askForUsername(){
-			nickname = prompt("Pick a nickname");
-			// FIXME
-			// force user to input a nickname
-			// to server the username, enforce unique
+			var temp = '';
+			// alert($.inArray(temp, online_users )==-1);
+			if(online_users.indexOf(temp)!=-1){
+			temp = prompt("Pick a nickname ");
+			while(online_users.indexOf(temp)!=-1){
+			temp = prompt("Nickname exists. Pick another nickname");
+			}		
+
+			}
+			nickname = temp;
+			socketio.emit("user_signup_to_server", {
+					user:nickname
+				});
+			displayOnlineUsers();
 		}
 
 		function allTheSocketListerners(){
+
+			socketio.on("user_signup_to_client",function(data) {
+					online_users = data;
+			     });
+
 			socketio.on("message_to_client",function(data) {
 				addMessage(data['room'], data['sender'], data['message']);
 			         // Hardcoded room at the moment. Would 
@@ -350,7 +467,7 @@
 
 			socketio.on("send_all_rooms",function(data) {
 				console.log("getting all rooms");
-				console.log(data); // Assign rooms to this data... somehow.
+				// console.log(data); // Assign rooms to this data... somehow.
 				// rooms = data;
 				for (var i = 0; i < data.length; i++){ // Then run this, cos atm trigger through the constructor.
 					if (data[i].type == "room"){
@@ -361,7 +478,7 @@
 						rooms[data[i].id] = (new twoPersonRoom(data[i].name, data[i].creator, data[i].id));
 					}
 				}
-				console.log(rooms);
+				// console.log(rooms);
 			});
 
 			socketio.on("new_room_to_client",function(data) {
@@ -372,6 +489,10 @@
 				// 	rooms[data.id] = (new PrivateRoom(data.name, data.creator, data.id, data.password, data.blacklist));
 				// }
 			});
+			socketio.on("new_private_room_to_client",function(data) {
+					rooms[data.id] = new PrivateRoom(data.name, data.creator, data.id, data.password, data.blacklist);
+			});
+
 
 			socketio.on("new_2person_room_to_client",function(data) {
 					rooms[data.id] = new twoPersonRoom(data.name, data.creator, data.id); // if not involved, that index does not exist (no data at that index)
@@ -384,10 +505,52 @@
 			});
 		}
 
+		function rightclick(){
+		// JAVASCRIPT (jQuery)
+			   console.log(" when clicked");
+
+			// Trigger action when the contexmenu is about to be shown
+			$(document).bind("contextmenu", function (event) {
+			    // Avoid the real one
+			    event.preventDefault();
+			    // Show contextmenu
+			    $(".custom-menu").finish().toggle(100).
+			    // In the right position (the mouse)
+			    css({
+			        top: event.pageY + "px",
+			        left: event.pageX + "px"
+			    });
+			});
+			// If the document is clicked somewhere
+			$(document).bind("mousedown", function (e) {
+			    // If the clicked element is not the menu
+			    if (!$(e.target).parents(".custom-menu").length > 0) {
+			        // Hide it
+			        $(".custom-menu").hide(100);
+			        // $(document).unbind("contextmenu");
+			    }
+			});
+
+			// If the menu element is clicked
+			$(".custom-menu li").click(function(){
+			    // This is the triggered action name
+			    switch($(this).attr("data-action")) {
+			        // A case for each action. Your actions here
+			        case "ban": alert("ban"); break;
+			        case "kick": alert("kick"); break;
+			    }
+			   	$(document).unbind("contextmenu");
+			    // Hide it AFTER the action was triggered
+			    $(".custom-menu").hide(100);
+			  });
+		}
+
+
+
 			function doUponLoading(event){
 				addButtonTabListeners();
-				allTheSocketListerners()
-				askForUsername();
+				allTheSocketListerners();
+				setTimeout(askForUsername, 300);
 			// To test things out
 			// rooms.push(new PrivateRoom("roomName", "theCreator", 0, "abcd"));
 			// rooms.push(new PrivateRoom("Sun", "Moon", 1, "abcd"));

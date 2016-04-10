@@ -61,3 +61,4 @@ socket.on('disconnect', function(){
 
 Useful links:
 Object-oriented programming in Javascript: http://javascriptissexy.com/oop-in-javascript-what-you-need-to-know/
+Adopted Code from the first answer on Stackoverflow http://stackoverflow.com/questions/4495626/making-custom-right-click-context-menus-for-my-web-app   

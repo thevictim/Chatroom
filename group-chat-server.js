@@ -4,7 +4,7 @@
 
 		rooms = []; // make sure to push to this array whenever a room is made
 		var max_room_id = 0; // increments every time a room is created
-		
+		online_users = [''];
 
 		function Room(name, creator) { // base room constructor
 			this.type = "room";
@@ -121,7 +121,9 @@ var io = socketio.listen(app);
 io.sockets.on("connection", function(socket){
 	// This callback runs when a new Socket.IO connection is established.
 	sendAllRooms();
- 	// send all rooms
+	io.sockets.emit("user_signup_to_client", online_users); // send online users
+ 	
+// send all rooms
  	function sendAllRooms(){
  		// var roomDetails = '{"roomDetails":[';
  		// for (var i = 0; i < rooms.length; i++){
@@ -133,9 +135,22 @@ io.sockets.on("connection", function(socket){
  		// }
  		// roomDetails+=']}'
  		// io.sockets.emit("send_all_rooms",roomDetails);
- 		console.log(rooms);
+ 		// console.log(rooms);
  		socket.emit("send_all_rooms",rooms);
  	}
+
+	socket.on('user_signup_to_server', function(data) {
+		// This callback runs when the server receives a new message from the client. 
+		var new_user = data["user"];
+		if(online_users.indexOf(new_user)==-1 && new_user!=''){
+			online_users.push(new_user);
+			console.log(online_users);
+			io.sockets.emit("user_signup_to_client", online_users); // broadcast the message to other users
+		}
+		else{
+			io.sockets.emit("user_signup_to_client", false); // broadcast the message to other users
+		}
+	});
 
  	socket.on('message_to_server', function(data) {
 		// This callback runs when the server receives a new message from the client. 
@@ -149,11 +164,25 @@ io.sockets.on("connection", function(socket){
 
  	socket.on('user_joined_room_to_server', function(data) {
 		console.log("room: "+data["room"]); // log it to the Node.JS output
-		rooms[data["room"]].addUser(data["user"]);
-		socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
-			user:data["user"],
-			room:data["room"]
+		if(rooms[data["room"]].type =="twoPersonRoom"){
+			socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
+				user:data["user"],
+				room:data["room"]
+			 }) // broadcast the message to other users
+		}
+		else if(rooms[data["room"]].users.indexOf(data["user"])==-1){
+			rooms[data["room"]].addUser(data["user"]);
+			socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
+				user:data["user"],
+				room:data["room"]
+			 }) // broadcast the message to other users
+		}
+		else{
+			socket.broadcast.emit("user_joined_room_to_client",{ // added broadcast here.
+				user:data["user"],
+				room:data["room"]
 		 }) // broadcast the message to other users
+		}
 	});
 
  	socket.on('new_room_to_server', function(data) {
@@ -169,6 +198,18 @@ io.sockets.on("connection", function(socket){
 		rooms.push(new_2p_room);
 		io.sockets.emit("new_2person_room_to_client",new_2p_room) // broadcast the message to other users
 	});
+
+	socket.on('new_private_room_to_server', function(data) {
+		// This callback runs when the server receives a new message from the client.
+		var new_p_room = new PrivateRoom(data["room_name"], data["creator"], data["password"],[]);
+		rooms.push(new_p_room);
+		io.sockets.emit("new_private_room_to_client",new_p_room) // broadcast the message to other users
+	});
+
+
+	
+
+
  });
 
 
