@@ -86,16 +86,16 @@
 			// var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
 		}
 
-		rooms.push(new PrivateRoom("roomName", "theCreator", "abcd"));
-		rooms.push(new PrivateRoom("Sun", "Moon", "abcd"));
-		rooms.push(new PrivateRoom("hey", "hi", "abcd"));
-		rooms.push(new Room("TestRoom", "Dylan"));
+		rooms.push(new Room("General Discussion", "theCreator"));
+		rooms.push(new Room("Anime", "theCreator"));
+		rooms.push(new Room("School", "theCreator"));
+		rooms.push(new PrivateRoom("Private (pw:abc)", "theCreator", "abc"));
 		// testroom.users.push('Joe');
 		// testroom.users.push('sep');
 		// testroom.users.push('ine');
-
-
-		rooms[0].addUser("creatorFriend");
+		for (var i = 0; i < rooms.length; i++){
+			rooms[i].removeUser("theCreator");
+		}
 // ********************
 // Stuff for socket.io
 // ********************
@@ -126,17 +126,6 @@ io.sockets.on("connection", function(socket){
  	
 // send all rooms
  	function sendAllRooms(){
- 		// var roomDetails = '{"roomDetails":[';
- 		// for (var i = 0; i < rooms.length; i++){
- 		// 	roomDetails = roomDetails+'{"name":"'+rooms[i].name+'","creator":"'+rooms[i].creator+'","users":['+rooms[i].users+'],"id":'+rooms[i].id+'}'; // with "" for strings
- 		// 	// roomDetails = roomDetails+'{name:'+rooms[i].name+',creator:'+rooms[i].creator+',users:['+rooms[i].users+'],id:'+rooms[i].id+'}'; // without ""
- 		// 	if (i != rooms.length-1){
- 		// 		roomDetails += ',';
- 		// 	}
- 		// }
- 		// roomDetails+=']}'
- 		// io.sockets.emit("send_all_rooms",roomDetails);
- 		// console.log(rooms);
  		socket.emit("send_all_rooms",rooms);
  	}
 

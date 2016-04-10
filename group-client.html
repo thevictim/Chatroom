@@ -522,7 +522,7 @@
 			socketio.emit("user_signup_to_server", {
 					user:nickname
 				});
-			displayOnlineUsers();
+			//displayOnlineUsers();
 		}
 
 		function allTheSocketListerners(){
@@ -560,6 +560,7 @@
 					}else if (data[i].type == "twoPersonRoom"){
 						rooms[data[i].id] = (new twoPersonRoom(data[i].name, data[i].creator, data[i].id));
 					}
+					rooms[i].removeUser("theCreator");
 				}
 				// console.log(rooms);
 			});
@@ -671,16 +672,6 @@
 				addButtonTabListeners();
 				allTheSocketListerners();
 				setTimeout(askForUsername, 300);
-			// To test things out
-			// rooms.push(new PrivateRoom("roomName", "theCreator", 0, "abcd"));
-			// rooms.push(new PrivateRoom("Sun", "Moon", 1, "abcd"));
-			// rooms.push(new PrivateRoom("hey", "hi", 2, "abcd"));
-			// testroom = new Room("TestRoom", "Dylan", 3);
-			// testroom.users.push('Joe');
-			// testroom.users.push('sep');
-			// testroom.users.push('ine');
-			// rooms.push(testroom);
-			// console.log(rooms);
 		}
 
 		// things to do last. In our javascript includes, write all the functions. Execute code here.
