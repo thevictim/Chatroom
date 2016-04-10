@@ -11,7 +11,7 @@
 			this.type = "room";
 			this.name = name;
 			this.creator = creator;
-			this.users = [creator];
+			this.users = [];
 			this.id = max_room_id;
 		 	max_room_id++; // auto increment the id
 		// 	var roomButton = document.createElement("button"); // whenever a room is created, add a button for it
@@ -93,9 +93,9 @@
 		// testroom.users.push('Joe');
 		// testroom.users.push('sep');
 		// testroom.users.push('ine');
-		for (var i = 0; i < rooms.length; i++){
-			rooms[i].removeUser("theCreator");
-		}
+		// for (var i = 0; i < rooms.length; i++){
+		// 	rooms[i].removeUser("theCreator");
+		// }
 // ********************
 // Stuff for socket.io
 // ********************
