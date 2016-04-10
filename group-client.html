@@ -179,7 +179,13 @@
 				this.users.push(user_to_add);
 				console.log(user_to_add+" added");
 				var userButton = document.createElement("button");
-				displayUsers(this);
+
+				// var room_id = $('ul.nav-tabs li.active').attr("id").slice(4);
+				// if (room_id == this.id){
+				// 	displayUsers(this);
+				// }
+				// IF currently displaying that room
+					
 				// $('.current_users').append($(userButton).attr({
 				// 	class : "list-group-item",
 				// 	value : user_to_add,
@@ -233,21 +239,30 @@
 		}
 
 		function displayUsers(current_room){
-			$('.current_users').empty();
-			// need to remove the current user first; then add 
-			users = current_room.users;
-			for (var i = users.length - 1; i >= 0; i--) {
-				if(users[i]!=''){
-					var userButton = document.createElement("button"); // whenever a room is created, add a button for it
-				$('.current_users').append($(userButton).attr({
-					class : "list-group-item",
-					value : users[i],
-					// id : users[i],  // id of the room, used to identify tab and tab content
-					// href :"#room_"+this.id,
-					'data-toggle' : "tab"
-				}).text(users[i]));
-				}	
-			};
+			// check if active exists
+			if ($('ul.nav-tabs li.active').length){
+				var room_id = $('ul.nav-tabs li.active').attr("id").slice(4);
+				if (room_id == this.id){
+								$('.current_users').empty();
+				// need to remove the current user first; then add 
+				users = current_room.users;
+				for (var i = users.length - 1; i >= 0; i--) {
+					if(users[i]!=''){
+						var userButton = document.createElement("button"); // whenever a room is created, add a button for it
+					$('.current_users').append($(userButton).attr({
+						class : "list-group-item",
+						value : users[i],
+						// id : users[i],  // id of the room, used to identify tab and tab content
+						// href :"#room_"+this.id,
+						'data-toggle' : "tab"
+					}).text(users[i]));
+					}	
+				}
+				}
+			}
+			
+
+
 		}
 
 
@@ -388,6 +403,7 @@
 						sender:nickname,
 						room:room_id
 					});
+					$('#message_value').val('');
 			    }
 			});
 
@@ -441,7 +457,7 @@
 					user_to_kick:user_name,
 					user_performing_action:nickname
 				});
-				$('#p_room_name').val('');
+				$('#user_to_ban').val('');
 				}			
 			});
 
@@ -461,7 +477,7 @@
 					user_to_ban:user_name,
 					user_performing_action:nickname
 				});
-				$('#p_room_name').val('');
+				$('#user_to_ban').val('');
 				}			
 			});
 
@@ -514,6 +530,7 @@
 					console.log(rooms);
 					console.log("trying to add user, id is "+data["room"]+", room is "+rooms[data["room"]]);
 					rooms[data["room"]].addUser(data['user']);
+					displayUsers(rooms[data["room"]]);
 				}
 			});
 
@@ -565,9 +582,13 @@
 					var tab = "#tab_"+data['room'];
 					$(tab).remove();
 					$(tab_content).remove();
-					alert("You have been kicked");
+					alert("You have been kicked from "+rooms[data['room']].name);
 					$('.nav-tabs a:last').tab('show'); // Select first tab
+					// call display users again
+					displayUsers(rooms[data['room']]);
 				}
+				// call display users again
+				displayUsers(rooms[data['room']]);
 			});
 			socketio.on("ban_from_room_to_client",function(data) {
 				rooms[data['room']].removeUser(data['user']);
@@ -578,9 +599,11 @@
 					var tab = "#tab_"+data['room'];
 					$(tab).remove();
 					$(tab_content).remove();
-					alert("You have been banned");
+					alert("You have been banned from "+rooms[data['room']].name);
 					$('.nav-tabs a:last').tab('show'); // Select first tab
+					displayUsers(rooms[data['room']]);
 				}
+				displayUsers(rooms[data['room']]);
 			});
 			
 			socketio.on("cannot_join",function(data) {
