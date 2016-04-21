@@ -1,5 +1,6 @@
-Module 6
+This is a simple chat room using node.js and socket.io
 
+---------------------------------------------------------------------------------------------------------------------------
 Refer to the top of group-client.html
 This is also useful: http://stackoverflow.com/questions/10058226/send-response-to-all-clients-except-sender-socket-io
 Fix bug with two-person chat
